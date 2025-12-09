@@ -30,9 +30,14 @@
                 <template x-for="cat in categories" :key="cat.id">
                     <li class="flex items-center justify-between p-2 bg-gray-50 rounded">
                         <span x-text="cat.name"></span>
-                        <button @click="deleteCategory(cat.id)" class="text-red-500 hover:text-red-700">
-                            删除
-                        </button>
+                        <div class="flex gap-2">
+                            <button @click="openEditCategoryModal(cat)" class="text-yellow-600 hover:text-yellow-800">
+                                ✏️ 编辑
+                            </button>
+                            <button @click="deleteCategory(cat.id)" class="text-red-500 hover:text-red-700">
+                                删除
+                            </button>
+                        </div>
                     </li>
                 </template>
             </ul>
@@ -163,14 +168,145 @@
                                 <a :href="link.url" target="_blank" class="text-blue-500 hover:underline truncate block max-w-xs" x-text="link.url"></a>
                             </td>
                             <td class="py-2">
-                                <button @click="deleteLink(link.id)" class="text-red-500 hover:text-red-700">
-                                    删除
-                                </button>
+                                <div class="flex gap-2">
+                                    <button @click="openEditLinkModal(link)" class="text-yellow-600 hover:text-yellow-800">
+                                        ✏️ 编辑
+                                    </button>
+                                    <button @click="deleteLink(link.id)" class="text-red-500 hover:text-red-700">
+                                        删除
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     </template>
                 </tbody>
             </table>
+        </div>
+    </div>
+
+    <!-- 分类编辑模态框 -->
+    <div x-show="showEditCategoryModal" class="fixed inset-0 bg-black bg-opacity-50 z-50" x-transition>
+        <div class="bg-white rounded-lg p-6 max-w-md mx-auto mt-20" @click.away="showEditCategoryModal=false">
+            <h3 class="text-lg font-bold mb-4">编辑分类</h3>
+            <form @submit.prevent="updateCategory">
+                <input
+                    type="text"
+                    x-model="editingCategory.name"
+                    placeholder="分类名称"
+                    class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
+                    required
+                >
+                <div class="flex gap-2">
+                    <button type="submit" class="flex-1 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                        保存
+                    </button>
+                    <button type="button" @click="showEditCategoryModal=false" class="flex-1 px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
+                        取消
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 链接编辑模态框 -->
+    <div x-show="showEditLinkModal" class="fixed inset-0 bg-black bg-opacity-50 z-50" x-transition>
+        <div class="bg-white rounded-lg p-6 max-w-2xl mx-auto mt-10" @click.away="showEditLinkModal=false">
+            <h3 class="text-lg font-bold mb-4">编辑链接</h3>
+            <form @submit.prevent="updateLink" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">分类</label>
+                    <select
+                        x-model="editingLink.category_id"
+                        class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                    >
+                        <option value="">选择分类</option>
+                        <template x-for="cat in categories" :key="cat.id">
+                            <option :value="cat.id" x-text="cat.name"></option>
+                        </template>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">标题</label>
+                    <input
+                        type="text"
+                        x-model="editingLink.title"
+                        class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                    >
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">URL</label>
+                    <input
+                        type="url"
+                        x-model="editingLink.url"
+                        class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                    >
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">描述 (可选)</label>
+                    <input
+                        type="text"
+                        x-model="editingLink.description"
+                        class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">图标URL (可选)</label>
+                    <input
+                        type="url"
+                        x-model="editingLink.icon"
+                        class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">排序 (可选)</label>
+                    <input
+                        type="number"
+                        x-model="editingLink.sort_order"
+                        class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">是否需要翻墙</label>
+                    <div class="flex gap-4">
+                        <label class="flex items-center">
+                            <input
+                                type="radio"
+                                x-model="editingLink.need_vpn"
+                                value="0"
+                                class="mr-2"
+                            >
+                            <span class="text-green-600">🛡️ 不需要</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input
+                                type="radio"
+                                x-model="editingLink.need_vpn"
+                                value="1"
+                                class="mr-2"
+                            >
+                            <span class="text-red-600">🛡️ 需要翻墙</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="flex gap-2">
+                    <button type="submit" class="flex-1 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                        保存
+                    </button>
+                    <button type="button" @click="showEditLinkModal=false" class="flex-1 px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
+                        取消
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -190,6 +326,12 @@ function admin() {
             need_vpn: '0',
             icon: ''
         },
+
+        // 编辑相关数据
+        showEditCategoryModal: false,
+        showEditLinkModal: false,
+        editingCategory: { id: null, name: '' },
+        editingLink: { id: null, category_id: '', title: '', url: '', description: '', need_vpn: '0', icon: '', sort_order: 0 },
 
         async init() {
             await this.loadData();
@@ -255,6 +397,53 @@ function admin() {
         getCategoryName(id) {
             const cat = this.categories.find(c => c.id === id);
             return cat ? cat.name : '未分类';
+        },
+
+        // 编辑分类相关方法
+        openEditCategoryModal(cat) {
+            this.editingCategory = { id: cat.id, name: cat.name };
+            this.showEditCategoryModal = true;
+        },
+
+        async updateCategory() {
+            await fetch(`/api/categories/${this.editingCategory.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': this.csrfToken
+                },
+                body: JSON.stringify({ name: this.editingCategory.name })
+            });
+            this.showEditCategoryModal = false;
+            await this.loadData();
+        },
+
+        // 编辑链接相关方法
+        openEditLinkModal(link) {
+            this.editingLink = {
+                id: link.id,
+                category_id: link.category_id,
+                title: link.title,
+                url: link.url,
+                description: link.description || '',
+                need_vpn: link.need_vpn.toString(),
+                icon: link.icon || '',
+                sort_order: link.sort_order || 0
+            };
+            this.showEditLinkModal = true;
+        },
+
+        async updateLink() {
+            await fetch(`/api/links/${this.editingLink.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': this.csrfToken
+                },
+                body: JSON.stringify(this.editingLink)
+            });
+            this.showEditLinkModal = false;
+            await this.loadData();
         }
     };
 }
