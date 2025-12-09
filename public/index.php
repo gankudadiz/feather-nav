@@ -22,5 +22,8 @@ require __DIR__ . '/../config/database.php';
 // 注册路由
 require __DIR__ . '/../app/routes.php';
 
+// 配置视图路径
+Flight::set('flight.views.path', __DIR__ . '/../resources/views');
+
 // 启动应用
 Flight::start();

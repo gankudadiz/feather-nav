@@ -35,6 +35,19 @@ class LinkController
             return;
         }
 
+
+        // Validate URL
+        if (!filter_var($data['url'], FILTER_VALIDATE_URL)) {
+            Flight::json(['error' => 'URL格式无效'], 400);
+            return;
+        }
+
+        // Validate Category ID
+        if (!empty($data['category_id']) && !is_numeric($data['category_id'])) {
+            Flight::json(['error' => '无效的分类ID'], 400);
+            return;
+        }
+
         $db = Flight::db()->getConnection();
         $stmt = $db->prepare(
             'INSERT INTO links (category_id, title, url, description, need_vpn, icon, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?)'

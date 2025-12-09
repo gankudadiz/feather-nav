@@ -6,6 +6,7 @@ use App\Controllers\HomeController;
 use App\Controllers\CategoryController;
 use App\Controllers\LinkController;
 use App\Controllers\AuthController;
+use App\Middleware\CsrfMiddleware;
 
 // 通用认证函数
 function requireAuth() {
@@ -24,6 +25,14 @@ function requireAuth() {
             $baseUrl = $_ENV['APP_URL'] ?? 'http://localhost:8080';
             Flight::redirect($baseUrl . '/auth/login');
         }
+        exit;
+    }
+}
+
+function validateCsrf() {
+    $csrf = new CsrfMiddleware();
+    if (!$csrf->validateToken()) {
+        Flight::json(['error' => 'CSRF token验证失败'], 403);
         exit;
     }
 }
@@ -49,14 +58,14 @@ Flight::group('/api', function () {
 // 受保护 API 路由（需要认证）
 Flight::group('/api', function () {
     // 分类 - 管理
-    Flight::route('POST /categories', function() { requireAuth(); $c = new CategoryController(); $c->store(); });
-    Flight::route('PUT /categories/@id', function($id) { requireAuth(); $c = new CategoryController(); $c->update($id); });
-    Flight::route('DELETE /categories/@id', function($id) { requireAuth(); $c = new CategoryController(); $c->destroy($id); });
+    Flight::route('POST /categories', function() { requireAuth(); validateCsrf(); $c = new CategoryController(); $c->store(); });
+    Flight::route('PUT /categories/@id', function($id) { requireAuth(); validateCsrf(); $c = new CategoryController(); $c->update($id); });
+    Flight::route('DELETE /categories/@id', function($id) { requireAuth(); validateCsrf(); $c = new CategoryController(); $c->destroy($id); });
 
     // 链接 - 管理
-    Flight::route('POST /links', function() { requireAuth(); $l = new LinkController(); $l->store(); });
-    Flight::route('PUT /links/@id', function($id) { requireAuth(); $l = new LinkController(); $l->update($id); });
-    Flight::route('DELETE /links/@id', function($id) { requireAuth(); $l = new LinkController(); $l->destroy($id); });
+    Flight::route('POST /links', function() { requireAuth(); validateCsrf(); $l = new LinkController(); $l->store(); });
+    Flight::route('PUT /links/@id', function($id) { requireAuth(); validateCsrf(); $l = new LinkController(); $l->update($id); });
+    Flight::route('DELETE /links/@id', function($id) { requireAuth(); validateCsrf(); $l = new LinkController(); $l->destroy($id); });
 });
 
 // 管理页面（需要认证）

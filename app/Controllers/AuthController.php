@@ -5,47 +5,53 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use Flight;
+use App\Middleware\CsrfMiddleware;
+use App\Helpers\CaptchaHelper;
 
 class AuthController
 {
     public function showLogin(): void
     {
-        echo '<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>登录</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-100 min-h-screen flex items-center justify-center">
-    <div class="bg-white p-8 rounded-lg shadow-md w-96">
-        <h1 class="text-2xl font-bold mb-6 text-center">登录</h1>
-        <form method="POST" action="/auth/login">
-            <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700 mb-1">用户名</label>
-                <input type="text" name="username" required
-                    class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
-            </div>
-            <div class="mb-6">
-                <label class="block text-sm font-medium text-gray-700 mb-1">密码</label>
-                <input type="password" name="password" required
-                    class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
-            </div>
-            <button type="submit"
-                class="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600">
-                登录
-            </button>
-        </form>
-    </div>
-</body>
-</html>';
+        $csrf = new CsrfMiddleware();
+        $csrfToken = $csrf->getToken();
+        Flight::render('auth/login', ['csrfToken' => $csrfToken]);
     }
 
     public function login(): void
     {
-        $username = Flight::request()->data->username ?? '';
+        // 验证CSRF token
+        $csrf = new CsrfMiddleware();
+        if (!$csrf->validateToken()) {
+            $baseUrl = $_ENV['APP_URL'] ?? 'http://localhost:8080';
+            Flight::redirect($baseUrl . '/auth/login?error=csrf');
+            return;
+        }
+
+        $username = trim(Flight::request()->data->username ?? '');
         $password = Flight::request()->data->password ?? '';
+        $captcha = trim(Flight::request()->data->captcha ?? '');
+
+        // Check lock
+        if (CaptchaHelper::isLocked($username)) {
+            $baseUrl = $_ENV['APP_URL'] ?? 'http://localhost:8080';
+            Flight::redirect($baseUrl . '/auth/login?error=locked');
+            return;
+        }
+
+        // Check captcha
+        if (CaptchaHelper::requiresCaptcha($username)) {
+            $sessionCaptcha = $_SESSION['captcha_answer'] ?? null;
+
+            if (empty($captcha) || !is_numeric($captcha) || (int)$captcha !== $sessionCaptcha) {
+                CaptchaHelper::recordFailure($username);
+                unset($_SESSION['captcha_answer']);
+
+                $baseUrl = $_ENV['APP_URL'] ?? 'http://localhost:8080';
+                Flight::redirect($baseUrl . '/auth/login?error=captcha');
+                return;
+            }
+            unset($_SESSION['captcha_answer']);
+        }
 
         $db = Flight::db()->getConnection();
         $stmt = $db->prepare('SELECT * FROM users WHERE username = ?');
@@ -53,10 +59,16 @@ class AuthController
         $user = $stmt->fetch();
 
         if ($user && password_verify($password, $user['password'])) {
+            // 登录成功，清除失败记录
+            CaptchaHelper::clearFailures($username);
+
             // 确保session已经启动
             if (session_status() === PHP_SESSION_NONE) {
                 session_start();
             }
+
+            // 重新生成会话ID（防止会话固定攻击）
+            session_regenerate_id(true);
             
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['username'] = $user['username'];
@@ -65,6 +77,9 @@ class AuthController
             $baseUrl = $_ENV['APP_URL'] ?? 'http://localhost:8080';
             Flight::redirect($baseUrl . '/admin');
         } else {
+            // 登录失败，记录失败次数
+            CaptchaHelper::recordFailure($username);
+
             $baseUrl = $_ENV['APP_URL'] ?? 'http://localhost:8080';
             Flight::redirect($baseUrl . '/auth/login?error=1');
         }

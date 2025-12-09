@@ -178,6 +178,7 @@
 <script>
 function admin() {
     return {
+        csrfToken: '<?= $csrfToken ?? "" ?>',
         categories: [],
         links: [],
         newCategory: '',
@@ -206,7 +207,10 @@ function admin() {
         async addCategory() {
             await fetch('/api/categories', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': this.csrfToken
+                },
                 body: JSON.stringify({ name: this.newCategory })
             });
             this.newCategory = '';
@@ -215,14 +219,22 @@ function admin() {
 
         async deleteCategory(id) {
             if (!confirm('确定删除此分类？')) return;
-            await fetch(`/api/categories/${id}`, { method: 'DELETE' });
+            await fetch(`/api/categories/${id}`, { 
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-Token': this.csrfToken
+                }
+            });
             await this.loadData();
         },
 
         async addLink() {
             await fetch('/api/links', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': this.csrfToken
+                },
                 body: JSON.stringify(this.newLink)
             });
             this.newLink = { category_id: '', title: '', url: '', description: '', need_vpn: '0', icon: '' };
@@ -231,7 +243,12 @@ function admin() {
 
         async deleteLink(id) {
             if (!confirm('确定删除此链接？')) return;
-            await fetch(`/api/links/${id}`, { method: 'DELETE' });
+            await fetch(`/api/links/${id}`, { 
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-Token': this.csrfToken
+                }
+            });
             await this.loadData();
         },
 

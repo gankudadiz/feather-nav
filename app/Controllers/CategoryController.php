@@ -35,6 +35,11 @@ class CategoryController
             return;
         }
 
+        if (isset($data['sort_order']) && !is_numeric($data['sort_order'])) {
+            Flight::json(['error' => '排序必须是数字'], 400);
+            return;
+        }
+
         $db = Flight::db()->getConnection();
         $stmt = $db->prepare('INSERT INTO categories (name, sort_order) VALUES (?, ?)');
         $stmt->execute([$data['name'], $data['sort_order'] ?? 0]);
@@ -48,6 +53,11 @@ class CategoryController
 
         if (empty($data['name'])) {
             Flight::json(['error' => '分类名称不能为空'], 400);
+            return;
+        }
+
+        if (isset($data['sort_order']) && !is_numeric($data['sort_order'])) {
+            Flight::json(['error' => '排序必须是数字'], 400);
             return;
         }
 

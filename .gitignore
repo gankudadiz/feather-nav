@@ -13,6 +13,7 @@ Thumbs.db
 /.claude/
 CLAUDE.md
 /doc/
+/plans/
 
 # Temporary files
 *.txt

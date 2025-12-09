@@ -16,12 +16,16 @@ class HomeController
 
     public function admin(): void
     {
-        $content = $this->renderView('admin');
+        $csrf = new \App\Middleware\CsrfMiddleware();
+        $csrfToken = $csrf->getToken();
+
+        $content = $this->renderView('admin', ['csrfToken' => $csrfToken]);
         echo $this->renderLayout($content, '管理后台');
     }
 
-    private function renderView(string $view): string
+    private function renderView(string $view, array $data = []): string
     {
+        extract($data);
         ob_start();
         include __DIR__ . '/../../resources/views/' . $view . '.php';
         return ob_get_clean();
