@@ -74,6 +74,7 @@
                             :alt="link.title"
                             class="w-8 h-8 mb-2 group-hover:scale-110 transition-transform"
                             onerror="this.src='/img/logo.svg'"
+                            referrerpolicy="no-referrer"
                         >
                         
                         <!-- 标题 -->
