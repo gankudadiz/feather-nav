@@ -371,7 +371,7 @@ function admin() {
         },
 
         async addLink() {
-            await fetch('/api/links', {
+            const res = await fetch('/api/links', {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
@@ -379,8 +379,31 @@ function admin() {
                 },
                 body: JSON.stringify(this.newLink)
             });
+
+            if (!res.ok) return;
+            const data = await res.json();
+            
+            // 异步获取图标
+            if (!this.newLink.icon) {
+                this.fetchIcon(data.id);
+            }
+
             this.newLink = { category_id: '', title: '', url: '', description: '', need_vpn: '0', icon: '' };
             await this.loadData();
+        },
+
+        async fetchIcon(id) {
+            try {
+                // 显示加载状态（可选，这里我们可以简单地依赖数据更新）
+                await fetch(`/api/links/${id}/icon`, {
+                    method: 'POST',
+                    headers: { 'X-CSRF-Token': this.csrfToken }
+                });
+                // 成功后重新加载列表以显示新图标
+                await this.loadData();
+            } catch (e) {
+                console.error('Fetch icon failed:', e);
+            }
         },
 
         async deleteLink(id) {
@@ -442,6 +465,12 @@ function admin() {
                 },
                 body: JSON.stringify(this.editingLink)
             });
+
+            // 如果更新时图标为空，也尝试获取
+            if (!this.editingLink.icon) {
+                this.fetchIcon(this.editingLink.id);
+            }
+
             this.showEditLinkModal = false;
             await this.loadData();
         }

@@ -49,9 +49,12 @@ class LinkController
             return;
         }
 
-        // 自动获取图标
-        if (empty($data['icon'])) {
-            $data['icon'] = FaviconHelper::fetchAndSave($data['url']);
+        // 如果提供了图标URL且不是本地上传的，尝试下载并保存到本地
+        if (!empty($data['icon']) && !str_starts_with($data['icon'], '/uploads/favicons/')) {
+            $localIcon = FaviconHelper::downloadImage($data['icon']);
+            if ($localIcon) {
+                $data['icon'] = $localIcon;
+            }
         }
 
         $db = Flight::db()->getConnection();
@@ -80,9 +83,12 @@ class LinkController
             return;
         }
 
-        // 自动获取图标
-        if (empty($data['icon'])) {
-            $data['icon'] = FaviconHelper::fetchAndSave($data['url']);
+        // 如果提供了图标URL且不是本地上传的，尝试下载并保存到本地
+        if (!empty($data['icon']) && !str_starts_with($data['icon'], '/uploads/favicons/')) {
+            $localIcon = FaviconHelper::downloadImage($data['icon']);
+            if ($localIcon) {
+                $data['icon'] = $localIcon;
+            }
         }
 
         $db = Flight::db()->getConnection();
@@ -110,5 +116,37 @@ class LinkController
         $stmt->execute([$id]);
 
         Flight::json(['message' => '删除成功']);
+    }
+
+    public function refreshIcon(string $id): void
+    {
+        // 验证权限后立即关闭 Session 写入，释放锁，避免阻塞其他并发请求
+        session_write_close();
+
+        $db = Flight::db()->getConnection();
+        
+        // 1. 获取链接信息
+        $stmt = $db->prepare('SELECT url FROM links WHERE id = ?');
+        $stmt->execute([$id]);
+        $link = $stmt->fetch();
+
+        if (!$link) {
+            Flight::json(['error' => '链接不存在'], 404);
+            return;
+        }
+
+        // 2. 抓取图标
+        $icon = FaviconHelper::fetchAndSave($link['url']);
+
+        if (!$icon) {
+            Flight::json(['error' => '未能抓取到图标'], 400);
+            return;
+        }
+
+        // 3. 更新数据库
+        $stmt = $db->prepare('UPDATE links SET icon = ? WHERE id = ?');
+        $stmt->execute([$icon, $id]);
+
+        Flight::json(['message' => '图标更新成功', 'icon' => $icon]);
     }
 }

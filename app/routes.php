@@ -65,6 +65,7 @@ Flight::group('/api', function () {
     // 链接 - 管理
     Flight::route('POST /links', function() { requireAuth(); validateCsrf(); $l = new LinkController(); $l->store(); });
     Flight::route('PUT /links/@id', function($id) { requireAuth(); validateCsrf(); $l = new LinkController(); $l->update($id); });
+    Flight::route('POST /links/@id/icon', function($id) { requireAuth(); validateCsrf(); $l = new LinkController(); $l->refreshIcon($id); });
     Flight::route('DELETE /links/@id', function($id) { requireAuth(); validateCsrf(); $l = new LinkController(); $l->destroy($id); });
 });
 
