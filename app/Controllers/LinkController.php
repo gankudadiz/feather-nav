@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use Flight;
+use App\Helpers\FaviconHelper;
 
 class LinkController
 {
@@ -48,6 +49,11 @@ class LinkController
             return;
         }
 
+        // 自动获取图标
+        if (empty($data['icon'])) {
+            $data['icon'] = FaviconHelper::fetchAndSave($data['url']);
+        }
+
         $db = Flight::db()->getConnection();
         $stmt = $db->prepare(
             'INSERT INTO links (category_id, title, url, description, need_vpn, icon, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?)'
@@ -72,6 +78,11 @@ class LinkController
         if (empty($data['title']) || empty($data['url'])) {
             Flight::json(['error' => '标题和URL不能为空'], 400);
             return;
+        }
+
+        // 自动获取图标
+        if (empty($data['icon'])) {
+            $data['icon'] = FaviconHelper::fetchAndSave($data['url']);
         }
 
         $db = Flight::db()->getConnection();

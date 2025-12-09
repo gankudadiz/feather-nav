@@ -12,7 +12,7 @@ A lightweight personal navigation website built with Flight PHP + Tailwind CSS +
 - ✅ **User Authentication**: Simple and secure login system
 - ✅ **Category Management**: Support for categories
 - ✅ **Search Functionality**: Quickly find links
-- ✅ **Icon Support**: Support for custom icons
+- ✅ **Icon Support**: Support for custom icons and auto-fetching
 
 ## Tech Stack
 

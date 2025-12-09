@@ -92,7 +92,7 @@
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">图标URL (可选)</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">图标URL (可选，留空自动获取)</label>
                     <input
                         type="url"
                         x-model="newLink.icon"
@@ -257,7 +257,7 @@
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">图标URL (可选)</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">图标URL (可选，留空自动获取)</label>
                     <input
                         type="url"
                         x-model="editingLink.icon"
