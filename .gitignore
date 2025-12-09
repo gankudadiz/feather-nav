@@ -1,0 +1,18 @@
+/vendor/
+/node_modules/
+/public/assets/
+.env
+.DS_Store
+Thumbs.db
+*.log
+/storage/logs/*
+!/storage/logs/.gitkeep
+
+# User specified ignores
+/database/
+/.claude/
+CLAUDE.md
+/doc/
+
+# Temporary files
+*.txt

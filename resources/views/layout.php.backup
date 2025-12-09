@@ -1,0 +1,44 @@
+<?php require __DIR__ . '/../../app/Helpers/AssetHelper.php'; ?>
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?= $title ?? '洲哥导航' ?></title>
+    
+    <!-- 网站图标 (Favicon) -->
+    <link rel="icon" type="image/svg+xml" href="/img/logo.svg">
+    <link rel="alternate icon" href="/img/logo.svg">
+    
+    <!-- 样式和脚本 -->
+    <?php if (\App\Helpers\AssetHelper::isDev()): ?>
+        <script type="module" src="<?= \App\Helpers\AssetHelper::get('@vite/client') ?>"></script>
+        <script type="module" src="<?= \App\Helpers\AssetHelper::get('js/main.js') ?>"></script>
+    <?php else: ?>
+        <link rel="stylesheet" href="<?= \App\Helpers\AssetHelper::get('css/app.css') ?>">
+        <script defer src="<?= \App\Helpers\AssetHelper::get('js/main.js') ?>"></script>
+    <?php endif; ?>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- 网站导航条 -->
+    <nav class="bg-white shadow-sm border-b border-gray-200 mb-4">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center justify-between h-16">
+                <!-- 网站Logo和标题 -->
+                <div class="flex items-center space-x-3">
+                    <img src="/img/logo.svg" alt="网站图标" class="w-8 h-8">
+                    <!-- 网站标题 -->
+                    <h1 class="text-xl font-bold text-gray-800">洲哥导航</h1>
+                </div>
+
+            </div>
+        </div>
+    </nav>
+    
+    <!-- 主要内容 -->
+    <main>
+        <?= $content ?>
+    </main>
+</body>
+</html>
