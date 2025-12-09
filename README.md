@@ -53,7 +53,7 @@ chmod +x start-preview.sh
 1. **克隆项目**
    ```bash
    git clone <repository-url>
-   cd personal_navigation
+   cd feather-nav
    ```
 
 2. **安装 PHP 依赖**
@@ -135,7 +135,7 @@ php -S localhost:8080 -t public
 ## 项目结构
 
 ```
-personal_navigation/
+feather-nav/
 ├── app/                      # 应用代码
 │   ├── Controllers/          # 控制器
 │   ├── Helpers/             # 帮助类

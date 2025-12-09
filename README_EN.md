@@ -53,7 +53,7 @@ This script will automatically detect the environment, install dependencies, bui
 1. **Clone the Project**
    ```bash
    git clone <repository-url>
-   cd personal_navigation
+   cd feather-nav
    ```
 
 2. **Install PHP Dependencies**
@@ -135,7 +135,7 @@ php -S localhost:8080 -t public
 ## Project Structure
 
 ```
-personal_navigation/
+feather-nav/
 ├── app/                      # Application Code
 │   ├── Controllers/          # Controllers
 │   ├── Helpers/             # Helpers
