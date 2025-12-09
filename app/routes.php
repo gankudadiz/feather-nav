@@ -6,6 +6,7 @@ use App\Controllers\HomeController;
 use App\Controllers\CategoryController;
 use App\Controllers\LinkController;
 use App\Controllers\AuthController;
+use App\Controllers\UploadController;
 use App\Middleware\CsrfMiddleware;
 
 // 通用认证函数
@@ -67,6 +68,9 @@ Flight::group('/api', function () {
     Flight::route('PUT /links/@id', function($id) { requireAuth(); validateCsrf(); $l = new LinkController(); $l->update($id); });
     Flight::route('POST /links/@id/icon', function($id) { requireAuth(); validateCsrf(); $l = new LinkController(); $l->refreshIcon($id); });
     Flight::route('DELETE /links/@id', function($id) { requireAuth(); validateCsrf(); $l = new LinkController(); $l->destroy($id); });
+
+    // 文件上传
+    Flight::route('POST /upload/icon', function() { requireAuth(); validateCsrf(); $u = new UploadController(); $u->uploadIcon(); });
 });
 
 // 管理页面（需要认证）

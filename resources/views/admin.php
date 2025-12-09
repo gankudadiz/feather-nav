@@ -93,11 +93,19 @@
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">图标URL (可选，留空自动获取)</label>
-                    <input
-                        type="url"
-                        x-model="newLink.icon"
-                        class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
+                    <div class="flex gap-2">
+                        <input
+                            type="text"
+                            x-model="newLink.icon"
+                            class="flex-1 px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="输入URL或上传图片"
+                        >
+                        <label class="cursor-pointer px-4 py-2 bg-gray-100 border border-gray-300 text-gray-700 rounded hover:bg-gray-200 flex items-center whitespace-nowrap">
+                            <span class="mr-2">📂</span> 上传
+                            <input type="file" class="hidden" @change="uploadIcon($event, newLink)" accept="image/*">
+                        </label>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">支持上传本地图片(jpg, png, gif, ico, webp, svg)</p>
                 </div>
 
                 <div>
@@ -258,11 +266,19 @@
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">图标URL (可选，留空自动获取)</label>
-                    <input
-                        type="url"
-                        x-model="editingLink.icon"
-                        class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
+                    <div class="flex gap-2">
+                        <input
+                            type="text"
+                            x-model="editingLink.icon"
+                            class="flex-1 px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="输入URL或上传图片"
+                        >
+                        <label class="cursor-pointer px-4 py-2 bg-gray-100 border border-gray-300 text-gray-700 rounded hover:bg-gray-200 flex items-center whitespace-nowrap">
+                            <span class="mr-2">📂</span> 上传
+                            <input type="file" class="hidden" @change="uploadIcon($event, editingLink)" accept="image/*">
+                        </label>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">支持上传本地图片(jpg, png, gif, ico, webp, svg)</p>
                 </div>
 
                 <div>
@@ -415,6 +431,37 @@ function admin() {
                 }
             });
             await this.loadData();
+        },
+
+        async uploadIcon(event, targetLink) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const res = await fetch('/api/upload/icon', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-Token': this.csrfToken
+                    },
+                    body: formData
+                });
+
+                const data = await res.json();
+                
+                if (!res.ok) {
+                    alert(data.error || '上传失败');
+                    return;
+                }
+
+                targetLink.icon = data.url;
+                event.target.value = ''; // Reset file input
+            } catch (e) {
+                console.error('Upload failed:', e);
+                alert('上传出错，请检查网络或重试');
+            }
         },
 
         getCategoryName(id) {
