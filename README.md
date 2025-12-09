@@ -1,5 +1,7 @@
 # 个人导航网站
 
+[English](README_EN.md)
+
 一个基于 Flight PHP + Tailwind CSS + Alpine.js 的轻量级个人导航网站。
 
 ## 功能特性
