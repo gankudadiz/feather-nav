@@ -14,6 +14,15 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
+REM Check PHP Extensions
+echo [INFO] Checking PHP Extensions...
+php -m | findstr /i "pdo_mysql" >nul
+if %errorlevel% neq 0 (
+    echo [ERROR] PHP extension 'pdo_mysql' not found. Please enable it in php.ini.
+    pause
+    exit /b 1
+)
+
 REM Check Node.js
 echo [INFO] Checking Node.js...
 call node --version >nul 2>&1

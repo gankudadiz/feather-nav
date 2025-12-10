@@ -44,7 +44,7 @@ This script will automatically detect the environment, install dependencies, bui
 
 #### Requirements
 
-- PHP 8.1+
+- PHP 8.1+ (Extension `pdo_mysql` is required)
 - MySQL 5.7+
 - Node.js 16+ (for developing/building frontend assets)
 
