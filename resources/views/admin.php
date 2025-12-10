@@ -25,22 +25,30 @@
                 </button>
             </form>
 
-            <!-- 分类列表 -->
-            <ul class="space-y-2">
-                <template x-for="cat in categories" :key="cat.id">
-                    <li class="flex items-center justify-between p-2 bg-gray-50 rounded">
-                        <span x-text="cat.name"></span>
-                        <div class="flex gap-2">
-                            <button @click="openEditCategoryModal(cat)" class="text-yellow-600 hover:text-yellow-800">
-                                ✏️ 编辑
-                            </button>
-                            <button @click="deleteCategory(cat.id)" class="text-red-500 hover:text-red-700">
-                                删除
-                            </button>
-                        </div>
-                    </li>
-                </template>
-            </ul>
+            <!-- 分类列表 - 添加滚动容器 -->
+            <div class="max-h-96 overflow-y-auto pr-2">
+                <ul class="space-y-2">
+                    <template x-for="cat in categories" :key="cat.id">
+                        <li class="flex items-center justify-between p-2 bg-gray-50 rounded hover:bg-gray-100 transition">
+                            <span x-text="cat.name"></span>
+                            <div class="flex gap-1">
+                                <button @click="moveCategory(cat.id, -1)"
+                                        class="p-1 text-gray-400 hover:text-blue-600"
+                                        title="上移">↑</button>
+                                <button @click="moveCategory(cat.id, 1)"
+                                        class="p-1 text-gray-400 hover:text-blue-600"
+                                        title="下移">↓</button>
+                                <button @click="openEditCategoryModal(cat)" class="text-yellow-600 hover:text-yellow-800">
+                                    ✏️ 编辑
+                                </button>
+                                <button @click="deleteCategory(cat.id)" class="text-red-500 hover:text-red-700">
+                                    删除
+                                </button>
+                            </div>
+                        </li>
+                    </template>
+                </ul>
+            </div>
         </div>
 
         <!-- 链接管理 -->
@@ -142,6 +150,23 @@
     <!-- 链接列表 -->
     <div class="mt-8 bg-white rounded-lg shadow p-6">
         <h2 class="text-lg font-bold mb-4">所有链接</h2>
+
+        <!-- 添加搜索栏 -->
+        <div class="mb-4 flex flex-col md:flex-row gap-4">
+            <input type="text"
+                   x-model="linkSearchTerm"
+                   @input.debounce.300ms="filterLinks"
+                   placeholder="搜索标题/URL/描述..."
+                   class="flex-1 px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <select x-model="selectedCategory" @change="filterLinks"
+                    class="px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="">所有分类</option>
+                <template x-for="cat in categories" :key="cat.id">
+                    <option :value="cat.id" x-text="cat.name"></option>
+                </template>
+            </select>
+        </div>
+
         <div class="overflow-x-auto">
             <table class="w-full text-left">
                 <thead>
@@ -154,18 +179,18 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <template x-for="link in links" :key="link.id">
-                        <tr class="border-b">
+                    <template x-for="link in paginatedLinks" :key="link.id">
+                        <tr class="border-b hover:bg-gray-50">
                             <td class="py-2" x-text="link.title"></td>
                             <td class="py-2" x-text="getCategoryName(link.category_id)"></td>
                             <td class="py-2">
-                                <span 
+                                <span
                                     x-show="link.need_vpn == 1"
                                     class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800"
                                 >
                                     🛡️ 需要翻墙
                                 </span>
-                                <span 
+                                <span
                                     x-show="link.need_vpn == 0"
                                     class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800"
                                 >
@@ -189,6 +214,28 @@
                     </template>
                 </tbody>
             </table>
+        </div>
+
+        <!-- 分页控件 -->
+        <div x-show="totalPages > 1" class="flex items-center justify-between mt-4 pt-4 border-t">
+            <div class="text-sm text-gray-600">
+                第 <span x-text="currentPage"></span> / <span x-text="totalPages"></span> 页，
+                共 <span x-text="filteredLinks.length"></span> 条
+            </div>
+            <div class="flex gap-2">
+                <button @click="changePage(1)"
+                        :disabled="currentPage === 1"
+                        class="px-3 py-1 border rounded disabled:opacity-50 hover:bg-gray-50">首页</button>
+                <button @click="changePage(currentPage - 1)"
+                        :disabled="currentPage === 1"
+                        class="px-3 py-1 border rounded disabled:opacity-50 hover:bg-gray-50">上一页</button>
+                <button @click="changePage(currentPage + 1)"
+                        :disabled="currentPage === totalPages"
+                        class="px-3 py-1 border rounded disabled:opacity-50 hover:bg-gray-50">下一页</button>
+                <button @click="changePage(totalPages)"
+                        :disabled="currentPage === totalPages"
+                        class="px-3 py-1 border rounded disabled:opacity-50 hover:bg-gray-50">末页</button>
+            </div>
         </div>
     </div>
 
@@ -349,8 +396,21 @@ function admin() {
         editingCategory: { id: null, name: '' },
         editingLink: { id: null, category_id: '', title: '', url: '', description: '', need_vpn: '0', icon: '', sort_order: 0 },
 
+        // 新增：链接搜索和分页
+        filteredLinks: [],
+        paginatedLinks: [],
+        linkSearchTerm: '',
+        selectedCategory: '',
+        currentPage: 1,
+        perPage: 10,
+        totalPages: 0,
+
+        // 新增：分类排序
+        categoryUpdateTimer: null,
+
         async init() {
             await this.loadData();
+            this.filterLinks(); // 初始化时应用筛选
         },
 
         async loadData() {
@@ -360,12 +420,13 @@ function admin() {
             ]);
             this.categories = await categoriesRes.json();
             this.links = await linksRes.json();
+            this.filteredLinks = [...this.links]; // 初始化筛选列表
         },
 
         async addCategory() {
             await fetch('/api/categories', {
                 method: 'POST',
-                headers: { 
+                headers: {
                     'Content-Type': 'application/json',
                     'X-CSRF-Token': this.csrfToken
                 },
@@ -373,23 +434,108 @@ function admin() {
             });
             this.newCategory = '';
             await this.loadData();
+            this.filterLinks();
+        },
+
+        // 新增：筛选链接
+        filterLinks() {
+            let filtered = this.links;
+
+            if (this.linkSearchTerm) {
+                const term = this.linkSearchTerm.toLowerCase();
+                filtered = filtered.filter(link =>
+                    link.title.toLowerCase().includes(term) ||
+                    link.url.toLowerCase().includes(term) ||
+                    (link.description || '').toLowerCase().includes(term)
+                );
+            }
+
+            if (this.selectedCategory) {
+                filtered = filtered.filter(link =>
+                    link.category_id == this.selectedCategory
+                );
+            }
+
+            this.filteredLinks = filtered;
+            this.currentPage = 1; // 重置到第一页
+            this.updatePaginatedLinks();
+        },
+
+        // 新增：更新分页数据
+        updatePaginatedLinks() {
+            const start = (this.currentPage - 1) * this.perPage;
+            const end = start + this.perPage;
+            this.paginatedLinks = this.filteredLinks.slice(start, end);
+            this.totalPages = Math.ceil(this.filteredLinks.length / this.perPage);
+        },
+
+        // 新增：切换页面
+        changePage(page) {
+            if (page < 1 || page > Math.ceil(this.filteredLinks.length / this.perPage)) return;
+            this.currentPage = page;
+            this.updatePaginatedLinks();
+        },
+
+        // 新增：移动分类
+        async moveCategory(id, direction) {
+            const index = this.categories.findIndex(c => c.id === id);
+            const newIndex = index + direction;
+
+            if (newIndex < 0 || newIndex >= this.categories.length) return;
+
+            // 交换位置
+            [this.categories[index], this.categories[newIndex]] =
+            [this.categories[newIndex], this.categories[index]];
+
+            // 重新分配排序值
+            this.categories.forEach((cat, i) => {
+                cat.sort_order = i + 1;
+            });
+
+            // 延迟更新，避免频繁请求
+            clearTimeout(this.categoryUpdateTimer);
+            this.categoryUpdateTimer = setTimeout(() => {
+                this.batchUpdateCategoryOrder();
+            }, 500);
+        },
+
+        // 新增：批量更新分类排序
+        async batchUpdateCategoryOrder() {
+            const updates = this.categories.map(cat => ({
+                id: cat.id,
+                sort_order: cat.sort_order
+            }));
+
+            try {
+                await fetch('/api/categories/batch-update', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': this.csrfToken
+                    },
+                    body: JSON.stringify({ updates })
+                });
+            } catch (e) {
+                console.error('更新排序失败:', e);
+            }
         },
 
         async deleteCategory(id) {
             if (!confirm('确定删除此分类？')) return;
-            await fetch(`/api/categories/${id}`, { 
+            await fetch(`/api/categories/${id}`, {
                 method: 'DELETE',
                 headers: {
                     'X-CSRF-Token': this.csrfToken
                 }
             });
             await this.loadData();
+            this.filterLinks();
         },
 
         async addLink() {
             const res = await fetch('/api/links', {
                 method: 'POST',
-                headers: { 
+                headers: {
                     'Content-Type': 'application/json',
                     'X-CSRF-Token': this.csrfToken
                 },
@@ -398,7 +544,7 @@ function admin() {
 
             if (!res.ok) return;
             const data = await res.json();
-            
+
             // 异步获取图标
             if (!this.newLink.icon) {
                 this.fetchIcon(data.id);
@@ -406,6 +552,7 @@ function admin() {
 
             this.newLink = { category_id: '', title: '', url: '', description: '', need_vpn: '0', icon: '' };
             await this.loadData();
+            this.filterLinks();
         },
 
         async fetchIcon(id) {
@@ -424,13 +571,14 @@ function admin() {
 
         async deleteLink(id) {
             if (!confirm('确定删除此链接？')) return;
-            await fetch(`/api/links/${id}`, { 
+            await fetch(`/api/links/${id}`, {
                 method: 'DELETE',
                 headers: {
                     'X-CSRF-Token': this.csrfToken
                 }
             });
             await this.loadData();
+            this.filterLinks();
         },
 
         async uploadIcon(event, targetLink) {
@@ -486,6 +634,7 @@ function admin() {
             });
             this.showEditCategoryModal = false;
             await this.loadData();
+            this.filterLinks();
         },
 
         // 编辑链接相关方法
@@ -520,6 +669,7 @@ function admin() {
 
             this.showEditLinkModal = false;
             await this.loadData();
+            this.filterLinks();
         }
     };
 }

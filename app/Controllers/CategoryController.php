@@ -76,4 +76,35 @@ class CategoryController
 
         Flight::json(['message' => '删除成功']);
     }
+
+    public function batchUpdate(): void
+    {
+        $jsonData = file_get_contents('php://input');
+        $data = json_decode($jsonData, true);
+
+        if (empty($data['updates']) || !is_array($data['updates'])) {
+            Flight::json(['error' => '无效的更新数据'], 400);
+            return;
+        }
+
+        $db = Flight::db()->getConnection();
+        $db->beginTransaction();
+
+        try {
+            foreach ($data['updates'] as $update) {
+                if (!isset($update['id']) || !isset($update['sort_order'])) {
+                    throw new \Exception('缺少必要参数：id 或 sort_order');
+                }
+
+                $stmt = $db->prepare('UPDATE categories SET sort_order = ? WHERE id = ?');
+                $stmt->execute([$update['sort_order'], $update['id']]);
+            }
+
+            $db->commit();
+            Flight::json(['success' => true, 'message' => '批量更新成功']);
+        } catch (\Exception $e) {
+            $db->rollBack();
+            Flight::json(['error' => '更新失败: ' . $e->getMessage()], 500);
+        }
+    }
 }

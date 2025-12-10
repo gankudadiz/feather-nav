@@ -62,6 +62,7 @@ Flight::group('/api', function () {
     Flight::route('POST /categories', function() { requireAuth(); validateCsrf(); $c = new CategoryController(); $c->store(); });
     Flight::route('PUT /categories/@id', function($id) { requireAuth(); validateCsrf(); $c = new CategoryController(); $c->update($id); });
     Flight::route('DELETE /categories/@id', function($id) { requireAuth(); validateCsrf(); $c = new CategoryController(); $c->destroy($id); });
+    Flight::route('POST /categories/batch-update', function() { requireAuth(); validateCsrf(); $c = new CategoryController(); $c->batchUpdate(); });
 
     // 链接 - 管理
     Flight::route('POST /links', function() { requireAuth(); validateCsrf(); $l = new LinkController(); $l->store(); });
