@@ -1,57 +1,127 @@
 <?php $title = '管理后台'; ?>
 
-<div class="container mx-auto px-4 py-8" x-data="admin()">
-    <div class="flex justify-between items-center mb-8">
-        <h1 class="text-2xl font-bold text-gray-800">管理后台</h1>
-        <a href="/" class="text-blue-500 hover:underline">← 返回首页</a>
+<div class="container mx-auto px-4 py-4" x-data="admin()">
+    <!-- 标签页导航 - 紧凑布局 -->
+    <div class="mb-4">
+        <div class="border-b border-gray-200">
+            <nav class="-mb-px flex space-x-8">
+                <button @click="currentTab = 'links'"
+                        :class="currentTab === 'links' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                        class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm transition">
+                    📋 所有链接
+                </button>
+                <button @click="currentTab = 'addLink'"
+                        :class="currentTab === 'addLink' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                        class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm transition">
+                    ➕ 添加链接
+                </button>
+                <button @click="currentTab = 'categories'"
+                        :class="currentTab === 'categories' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                        class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm transition">
+                    📁 分类管理
+                </button>
+            </nav>
+        </div>
     </div>
 
-    <div class="grid md:grid-cols-2 gap-8">
-        <!-- 分类管理 -->
+    <!-- 标签页内容 -->
+    <!-- 所有链接 -->
+    <div x-show="currentTab === 'links'" x-transition class="mb-8">
         <div class="bg-white rounded-lg shadow p-6">
-            <h2 class="text-lg font-bold mb-4">分类管理</h2>
+            <h2 class="text-lg font-bold mb-4">所有链接</h2>
 
-            <!-- 添加分类 -->
-            <form @submit.prevent="addCategory" class="flex gap-2 mb-4">
-                <input
-                    type="text"
-                    x-model="newCategory"
-                    placeholder="分类名称"
-                    class="flex-1 px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                >
-                <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
-                    添加
-                </button>
-            </form>
-
-            <!-- 分类列表 - 添加滚动容器 -->
-            <div class="max-h-96 overflow-y-auto pr-2">
-                <ul class="space-y-2">
+            <!-- 添加搜索栏 -->
+            <div class="mb-4 flex flex-col md:flex-row gap-3">
+                <input type="text"
+                       x-model="linkSearchTerm"
+                       @input.debounce.300ms="filterLinks"
+                       placeholder="搜索标题/URL/描述..."
+                       class="flex-1 px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <select x-model="selectedCategory" @change="filterLinks"
+                        class="px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">所有分类</option>
                     <template x-for="cat in categories" :key="cat.id">
-                        <li class="flex items-center justify-between p-2 bg-gray-50 rounded hover:bg-gray-100 transition">
-                            <span x-text="cat.name"></span>
-                            <div class="flex gap-1">
-                                <button @click="moveCategory(cat.id, -1)"
-                                        class="p-1 text-gray-400 hover:text-blue-600"
-                                        title="上移">↑</button>
-                                <button @click="moveCategory(cat.id, 1)"
-                                        class="p-1 text-gray-400 hover:text-blue-600"
-                                        title="下移">↓</button>
-                                <button @click="openEditCategoryModal(cat)" class="text-yellow-600 hover:text-yellow-800">
-                                    ✏️ 编辑
-                                </button>
-                                <button @click="deleteCategory(cat.id)" class="text-red-500 hover:text-red-700">
-                                    删除
-                                </button>
-                            </div>
-                        </li>
+                        <option :value="cat.id" x-text="cat.name"></option>
                     </template>
-                </ul>
+                </select>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="border-b">
+                            <th class="py-1.5 text-sm font-semibold text-gray-700">标题</th>
+                            <th class="py-1.5 text-sm font-semibold text-gray-700">分类</th>
+                            <th class="py-1.5 text-sm font-semibold text-gray-700">翻墙</th>
+                            <th class="py-1.5 text-sm font-semibold text-gray-700">URL</th>
+                            <th class="py-1.5 text-sm font-semibold text-gray-700">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="link in paginatedLinks" :key="link.id">
+                            <tr class="border-b hover:bg-gray-50">
+                                <td class="py-1.5 text-sm" x-text="link.title"></td>
+                                <td class="py-1.5 text-sm" x-text="getCategoryName(link.category_id)"></td>
+                                <td class="py-1.5">
+                                    <span
+                                        x-show="link.need_vpn == 1"
+                                        class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800"
+                                    >
+                                        🛡️ 需要翻墙
+                                    </span>
+                                    <span
+                                        x-show="link.need_vpn == 0"
+                                        class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"
+                                    >
+                                        🛡️ 不需要
+                                    </span>
+                                </td>
+                                <td class="py-1.5">
+                                    <a :href="link.url" target="_blank" class="text-blue-500 hover:underline truncate block max-w-xs text-sm" x-text="link.url"></a>
+                                </td>
+                                <td class="py-1.5">
+                                    <div class="flex gap-1.5">
+                                        <button @click="openEditLinkModal(link)" class="px-2 py-1 text-yellow-700 bg-yellow-50 rounded hover:bg-yellow-100 border border-yellow-200 transition flex items-center gap-1 text-xs">
+                                            <span>✏️</span>
+                                            <span>编辑</span>
+                                        </button>
+                                        <button @click="deleteLink(link.id)" class="px-2 py-1 text-red-700 bg-red-50 rounded hover:bg-red-100 border border-red-200 transition flex items-center gap-1 text-xs">
+                                            <span>🗑️</span>
+                                            <span>删除</span>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 分页控件 -->
+            <div x-show="totalPages > 1" class="flex items-center justify-between mt-4 pt-4 border-t">
+                <div class="text-sm text-gray-600">
+                    第 <span x-text="currentPage"></span> / <span x-text="totalPages"></span> 页，共 <span x-text="filteredLinks.length"></span> 条
+                </div>
+                <div class="flex gap-2">
+                    <button @click="changePage(1)"
+                            :disabled="currentPage === 1"
+                            class="px-3 py-1 border rounded disabled:opacity-50 hover:bg-gray-50 text-sm">首页</button>
+                    <button @click="changePage(currentPage - 1)"
+                            :disabled="currentPage === 1"
+                            class="px-3 py-1 border rounded disabled:opacity-50 hover:bg-gray-50 text-sm">上一页</button>
+                    <button @click="changePage(currentPage + 1)"
+                            :disabled="currentPage === totalPages"
+                            class="px-3 py-1 border rounded disabled:opacity-50 hover:bg-gray-50 text-sm">下一页</button>
+                    <button @click="changePage(totalPages)"
+                            :disabled="currentPage === totalPages"
+                            class="px-3 py-1 border rounded disabled:opacity-50 hover:bg-gray-50 text-sm">末页</button>
+                </div>
             </div>
         </div>
+    </div>
 
-        <!-- 链接管理 -->
+    <!-- 添加链接 -->
+    <div x-show="currentTab === 'addLink'" x-transition class="mb-8">
         <div class="bg-white rounded-lg shadow p-6">
             <h2 class="text-lg font-bold mb-4">添加链接</h2>
 
@@ -140,101 +210,65 @@
                     </div>
                 </div>
 
-                <button type="submit" class="w-full px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">
+                <button type="submit" class="w-full px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
                     添加链接
                 </button>
             </form>
         </div>
     </div>
 
-    <!-- 链接列表 -->
-    <div class="mt-8 bg-white rounded-lg shadow p-6">
-        <h2 class="text-lg font-bold mb-4">所有链接</h2>
+    <!-- 分类管理 -->
+    <div x-show="currentTab === 'categories'" x-transition class="mb-8">
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-bold mb-4">分类管理</h2>
 
-        <!-- 添加搜索栏 -->
-        <div class="mb-4 flex flex-col md:flex-row gap-4">
-            <input type="text"
-                   x-model="linkSearchTerm"
-                   @input.debounce.300ms="filterLinks"
-                   placeholder="搜索标题/URL/描述..."
-                   class="flex-1 px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <select x-model="selectedCategory" @change="filterLinks"
-                    class="px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <option value="">所有分类</option>
-                <template x-for="cat in categories" :key="cat.id">
-                    <option :value="cat.id" x-text="cat.name"></option>
-                </template>
-            </select>
-        </div>
+            <!-- 添加分类 -->
+            <form @submit.prevent="addCategory" class="flex gap-2 mb-4">
+                <input
+                    type="text"
+                    x-model="newCategory"
+                    placeholder="分类名称"
+                    class="flex-1 px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                >
+                <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                    添加
+                </button>
+            </form>
 
-        <div class="overflow-x-auto">
-            <table class="w-full text-left">
-                <thead>
-                    <tr class="border-b">
-                        <th class="py-2">标题</th>
-                        <th class="py-2">分类</th>
-                        <th class="py-2">翻墙</th>
-                        <th class="py-2">URL</th>
-                        <th class="py-2">操作</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <template x-for="link in paginatedLinks" :key="link.id">
-                        <tr class="border-b hover:bg-gray-50">
-                            <td class="py-2" x-text="link.title"></td>
-                            <td class="py-2" x-text="getCategoryName(link.category_id)"></td>
-                            <td class="py-2">
-                                <span
-                                    x-show="link.need_vpn == 1"
-                                    class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800"
-                                >
-                                    🛡️ 需要翻墙
-                                </span>
-                                <span
-                                    x-show="link.need_vpn == 0"
-                                    class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800"
-                                >
-                                    🛡️ 不需要
-                                </span>
-                            </td>
-                            <td class="py-2">
-                                <a :href="link.url" target="_blank" class="text-blue-500 hover:underline truncate block max-w-xs" x-text="link.url"></a>
-                            </td>
-                            <td class="py-2">
-                                <div class="flex gap-2">
-                                    <button @click="openEditLinkModal(link)" class="text-yellow-600 hover:text-yellow-800">
-                                        ✏️ 编辑
-                                    </button>
-                                    <button @click="deleteLink(link.id)" class="text-red-500 hover:text-red-700">
-                                        删除
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
+            <!-- 分类列表 - 添加滚动容器 -->
+            <div class="max-h-96 overflow-y-auto pr-2">
+                <ul class="space-y-2">
+                    <template x-for="cat in categories" :key="cat.id">
+                        <li class="flex items-center justify-between p-1.5 bg-gray-50 rounded hover:bg-gray-100 transition">
+                            <span x-text="cat.name" class="text-sm"></span>
+                            <div class="flex gap-1.5">
+                                <button @click="moveCategory(cat.id, -1)"
+                                        class="p-1.5 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 border border-blue-200 transition"
+                                        title="上移">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                                    </svg>
+                                </button>
+                                <button @click="moveCategory(cat.id, 1)"
+                                        class="p-1.5 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 border border-blue-200 transition"
+                                        title="下移">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </button>
+                                <button @click="openEditCategoryModal(cat)" class="px-2 py-1 text-yellow-700 bg-yellow-50 rounded hover:bg-yellow-100 border border-yellow-200 transition flex items-center gap-1 text-xs">
+                                    <span>✏️</span>
+                                    <span>编辑</span>
+                                </button>
+                                <button @click="deleteCategory(cat.id)" class="px-2 py-1 text-red-700 bg-red-50 rounded hover:bg-red-100 border border-red-200 transition flex items-center gap-1 text-xs">
+                                    <span>🗑️</span>
+                                    <span>删除</span>
+                                </button>
+                            </div>
+                        </li>
                     </template>
-                </tbody>
-            </table>
-        </div>
-
-        <!-- 分页控件 -->
-        <div x-show="totalPages > 1" class="flex items-center justify-between mt-4 pt-4 border-t">
-            <div class="text-sm text-gray-600">
-                第 <span x-text="currentPage"></span> / <span x-text="totalPages"></span> 页，
-                共 <span x-text="filteredLinks.length"></span> 条
-            </div>
-            <div class="flex gap-2">
-                <button @click="changePage(1)"
-                        :disabled="currentPage === 1"
-                        class="px-3 py-1 border rounded disabled:opacity-50 hover:bg-gray-50">首页</button>
-                <button @click="changePage(currentPage - 1)"
-                        :disabled="currentPage === 1"
-                        class="px-3 py-1 border rounded disabled:opacity-50 hover:bg-gray-50">上一页</button>
-                <button @click="changePage(currentPage + 1)"
-                        :disabled="currentPage === totalPages"
-                        class="px-3 py-1 border rounded disabled:opacity-50 hover:bg-gray-50">下一页</button>
-                <button @click="changePage(totalPages)"
-                        :disabled="currentPage === totalPages"
-                        class="px-3 py-1 border rounded disabled:opacity-50 hover:bg-gray-50">末页</button>
+                </ul>
             </div>
         </div>
     </div>
@@ -372,7 +406,7 @@
             </form>
         </div>
     </div>
-</div>
+
 
 <script>
 function admin() {
@@ -389,6 +423,9 @@ function admin() {
             need_vpn: '0',
             icon: ''
         },
+
+        // 标签页状态
+        currentTab: 'links', // 默认显示"所有链接"标签
 
         // 编辑相关数据
         showEditCategoryModal: false,
@@ -674,3 +711,4 @@ function admin() {
     };
 }
 </script>
+</div>

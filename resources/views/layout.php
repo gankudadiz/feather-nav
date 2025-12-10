@@ -22,14 +22,18 @@
 </head>
 <body class="bg-gray-100 min-h-screen">
     <!-- 网站导航条 -->
-    <nav class="bg-white shadow-sm border-b border-gray-200 mb-4">
+    <nav class="bg-white shadow-sm border-b border-gray-200">
         <div class="container mx-auto px-4">
             <div class="flex items-center justify-between h-16">
                 <!-- 网站Logo和标题 -->
                 <div class="flex items-center space-x-3">
                     <img src="/img/logo.svg" alt="网站图标" class="w-8 h-8">
-                    <!-- 网站标题 -->
-                    <h1 class="text-xl font-bold text-gray-800">洲哥导航</h1>
+                    <div class="flex items-baseline space-x-3">
+                        <!-- 网站标题 -->
+                        <h1 class="text-xl font-bold text-gray-800">洲哥导航</h1>
+                        <!-- 广告语 - 突出技术栈和极简风格 -->
+                        <span class="text-sm text-gray-500 font-medium tracking-wide">极简高效 • Flight PHP + Alpine.js 驱动</span>
+                    </div>
                 </div>
 
                 <!-- 右上角操作区 -->
