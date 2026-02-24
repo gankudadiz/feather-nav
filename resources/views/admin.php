@@ -1,6 +1,52 @@
 <?php $title = '管理后台'; ?>
 
 <div class="container mx-auto px-4 py-4" x-data="admin()">
+    <!-- Toast 提示组件 -->
+    <div x-show="toast.visible"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 translate-y-4"
+         x-transition:enter-end="opacity-100 translate-y-0"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 translate-y-0"
+         x-transition:leave-end="opacity-0 translate-y-4"
+         class="fixed top-4 right-4 z-50 max-w-sm">
+        <div class="bg-white rounded-lg shadow-lg border overflow-hidden"
+             :class="toast.type === 'success' ? 'border-blue-500' : 'border-red-500'">
+            <div class="flex items-center p-4">
+                <!-- 图标 -->
+                <div class="flex-shrink-0 mr-3">
+                    <template x-if="toast.type === 'success'">
+                        <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                    </template>
+                    <template x-if="toast.type === 'error'">
+                        <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </template>
+                </div>
+                <!-- 消息内容 -->
+                <div class="flex-1">
+                    <p class="text-sm font-medium" :class="toast.type === 'success' ? 'text-blue-800' : 'text-red-800'" x-text="toast.message"></p>
+                </div>
+                <!-- 关闭按钮 -->
+                <button @click="hideToast()" class="flex-shrink-0 ml-2 text-gray-400 hover:text-gray-600">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <!-- 倒计时进度条 -->
+            <div class="h-1 bg-gray-200" x-show="toast.visible">
+                <div class="h-full transition-all ease-linear"
+                     :class="toast.type === 'success' ? 'bg-blue-500' : 'bg-red-500'"
+                     :style="'width: ' + toast.progress + '%; transition-duration: ' + toast.remainingTime + 'ms'"
+                     x-ref="toastProgress"></div>
+            </div>
+        </div>
+    </div>
+
     <!-- 标签页导航 - 紧凑布局 -->
     <div class="mb-4">
         <div class="border-b border-gray-200">
@@ -445,6 +491,16 @@ function admin() {
         // 新增：分类排序
         categoryUpdateTimer: null,
 
+        // Toast 组件
+        toast: {
+            visible: false,
+            message: '',
+            type: 'success', // 'success' or 'error'
+            progress: 100,
+            remainingTime: 3000,
+            timer: null
+        },
+
         async init() {
             await this.loadData();
             this.filterLinks(); // 初始化时应用筛选
@@ -461,17 +517,26 @@ function admin() {
         },
 
         async addCategory() {
-            await fetch('/api/categories', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-Token': this.csrfToken
-                },
-                body: JSON.stringify({ name: this.newCategory })
-            });
-            this.newCategory = '';
-            await this.loadData();
-            this.filterLinks();
+            try {
+                const res = await fetch('/api/categories', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': this.csrfToken
+                    },
+                    body: JSON.stringify({ name: this.newCategory })
+                });
+                if (res.ok) {
+                    this.showToast('分类添加成功', 'success');
+                    this.newCategory = '';
+                    await this.loadData();
+                    this.filterLinks();
+                } else {
+                    this.showToast('分类添加失败', 'error');
+                }
+            } catch (e) {
+                this.showToast('分类添加失败：' + e.message, 'error');
+            }
         },
 
         // 新增：筛选链接
@@ -559,37 +624,55 @@ function admin() {
 
         async deleteCategory(id) {
             if (!confirm('确定删除此分类？')) return;
-            await fetch(`/api/categories/${id}`, {
-                method: 'DELETE',
-                headers: {
-                    'X-CSRF-Token': this.csrfToken
+            try {
+                const res = await fetch(`/api/categories/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-Token': this.csrfToken
+                    }
+                });
+                if (res.ok) {
+                    this.showToast('分类删除成功', 'success');
+                    await this.loadData();
+                    this.filterLinks();
+                } else {
+                    this.showToast('分类删除失败', 'error');
                 }
-            });
-            await this.loadData();
-            this.filterLinks();
+            } catch (e) {
+                this.showToast('分类删除失败：' + e.message, 'error');
+            }
         },
 
         async addLink() {
-            const res = await fetch('/api/links', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-Token': this.csrfToken
-                },
-                body: JSON.stringify(this.newLink)
-            });
+            try {
+                const res = await fetch('/api/links', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': this.csrfToken
+                    },
+                    body: JSON.stringify(this.newLink)
+                });
 
-            if (!res.ok) return;
-            const data = await res.json();
+                if (!res.ok) {
+                    this.showToast('链接添加失败', 'error');
+                    return;
+                }
+                const data = await res.json();
 
-            // 异步获取图标
-            if (!this.newLink.icon) {
-                this.fetchIcon(data.id);
+                // 异步获取图标
+                if (!this.newLink.icon) {
+                    this.fetchIcon(data.id);
+                }
+
+                this.showToast('链接添加成功', 'success');
+                this.newLink = { category_id: '', title: '', url: '', description: '', need_vpn: '0', icon: '' };
+                this.currentTab = 'links';
+                await this.loadData();
+                this.filterLinks();
+            } catch (e) {
+                this.showToast('链接添加失败：' + e.message, 'error');
             }
-
-            this.newLink = { category_id: '', title: '', url: '', description: '', need_vpn: '0', icon: '' };
-            await this.loadData();
-            this.filterLinks();
         },
 
         async fetchIcon(id) {
@@ -608,14 +691,24 @@ function admin() {
 
         async deleteLink(id) {
             if (!confirm('确定删除此链接？')) return;
-            await fetch(`/api/links/${id}`, {
-                method: 'DELETE',
-                headers: {
-                    'X-CSRF-Token': this.csrfToken
+            try {
+                const res = await fetch(`/api/links/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-Token': this.csrfToken
+                    }
+                });
+                if (res.ok) {
+                    this.showToast('链接删除成功', 'success');
+                    this.currentTab = 'links';
+                    await this.loadData();
+                    this.filterLinks();
+                } else {
+                    this.showToast('链接删除失败', 'error');
                 }
-            });
-            await this.loadData();
-            this.filterLinks();
+            } catch (e) {
+                this.showToast('链接删除失败：' + e.message, 'error');
+            }
         },
 
         async uploadIcon(event, targetLink) {
@@ -661,17 +754,26 @@ function admin() {
         },
 
         async updateCategory() {
-            await fetch(`/api/categories/${this.editingCategory.id}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-Token': this.csrfToken
-                },
-                body: JSON.stringify({ name: this.editingCategory.name })
-            });
-            this.showEditCategoryModal = false;
-            await this.loadData();
-            this.filterLinks();
+            try {
+                const res = await fetch(`/api/categories/${this.editingCategory.id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': this.csrfToken
+                    },
+                    body: JSON.stringify({ name: this.editingCategory.name })
+                });
+                if (res.ok) {
+                    this.showToast('分类更新成功', 'success');
+                    this.showEditCategoryModal = false;
+                    await this.loadData();
+                    this.filterLinks();
+                } else {
+                    this.showToast('分类更新失败', 'error');
+                }
+            } catch (e) {
+                this.showToast('分类更新失败：' + e.message, 'error');
+            }
         },
 
         // 编辑链接相关方法
@@ -690,23 +792,84 @@ function admin() {
         },
 
         async updateLink() {
-            await fetch(`/api/links/${this.editingLink.id}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-Token': this.csrfToken
-                },
-                body: JSON.stringify(this.editingLink)
-            });
+            try {
+                const res = await fetch(`/api/links/${this.editingLink.id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': this.csrfToken
+                    },
+                    body: JSON.stringify(this.editingLink)
+                });
 
-            // 如果更新时图标为空，也尝试获取
-            if (!this.editingLink.icon) {
-                this.fetchIcon(this.editingLink.id);
+                if (res.ok) {
+                    this.showToast('链接更新成功', 'success');
+                    // 如果更新时图标为空，也尝试获取
+                    if (!this.editingLink.icon) {
+                        this.fetchIcon(this.editingLink.id);
+                    }
+                    this.showEditLinkModal = false;
+                    this.currentTab = 'links';
+                    await this.loadData();
+                    this.filterLinks();
+                } else {
+                    this.showToast('链接更新失败', 'error');
+                }
+            } catch (e) {
+                this.showToast('链接更新失败：' + e.message, 'error');
+            }
+        },
+
+        // Toast 相关方法
+        showToast(message, type = 'success') {
+            // 清除之前的定时器
+            if (this.toast.timer) {
+                clearTimeout(this.toast.timer);
             }
 
-            this.showEditLinkModal = false;
-            await this.loadData();
-            this.filterLinks();
+            // 设置消息
+            this.toast.message = message;
+            this.toast.type = type;
+            this.toast.visible = true;
+            this.toast.progress = 100;
+            this.toast.remainingTime = 3000;
+
+            // 使用 requestAnimationFrame 确保进度条动画平滑
+            this.$nextTick(() => {
+                this.animateProgress();
+            });
+
+            // 3秒后自动隐藏
+            this.toast.timer = setTimeout(() => {
+                this.hideToast();
+            }, 3000);
+        },
+
+        animateProgress() {
+            const startTime = Date.now();
+            const duration = 3000;
+
+            const updateProgress = () => {
+                const elapsed = Date.now() - startTime;
+                const remaining = Math.max(0, duration - elapsed);
+                this.toast.progress = (remaining / duration) * 100;
+                this.toast.remainingTime = remaining;
+
+                if (remaining > 0 && this.toast.visible) {
+                    requestAnimationFrame(updateProgress);
+                }
+            };
+
+            requestAnimationFrame(updateProgress);
+        },
+
+        hideToast() {
+            this.toast.visible = false;
+            this.toast.progress = 0;
+            if (this.toast.timer) {
+                clearTimeout(this.toast.timer);
+                this.toast.timer = null;
+            }
         }
     };
 }

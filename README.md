@@ -44,7 +44,7 @@ chmod +x start-preview.sh
 
 #### 环境要求
 
-- PHP 8.1+ (必须启用 `pdo_mysql` 扩展)
+- PHP 8.1+ (必须启用 `pdo_mysql` 和 `fileinfo` 扩展)
 - MySQL 5.7+
 - Node.js 16+ (开发/构建前端资源)
 
