@@ -20,10 +20,10 @@ class CategoryController
     public function store(): void
     {
         $request = Flight::request();
-        
+
         // 支持表单数据和JSON数据
         $data = $request->data->getData();
-        
+
         // 如果没有数据且是JSON请求，则解析原始数据
         if (empty($data) && $request->header('Content-Type') === 'application/json') {
             $jsonData = file_get_contents('php://input');
@@ -71,10 +71,19 @@ class CategoryController
     public function destroy(string $id): void
     {
         $db = Flight::db()->getConnection();
+
+        // 删除前先统计该分类下的链接数量
+        $countStmt = $db->prepare('SELECT COUNT(*) FROM links WHERE category_id = ?');
+        $countStmt->execute([$id]);
+        $linkCount = (int) $countStmt->fetchColumn();
+
         $stmt = $db->prepare('DELETE FROM categories WHERE id = ?');
         $stmt->execute([$id]);
 
-        Flight::json(['message' => '删除成功']);
+        Flight::json([
+            'message' => '删除成功',
+            'link_count' => $linkCount,  // 返回受影响的链接数，便于调用方感知
+        ]);
     }
 
     public function batchUpdate(): void
