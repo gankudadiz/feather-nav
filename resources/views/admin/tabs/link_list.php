@@ -20,6 +20,7 @@
             <table class="w-full text-left">
                 <thead>
                     <tr class="border-b">
+                        <th class="py-1.5 text-sm font-semibold text-gray-700 w-12">图标</th>
                         <th class="py-1.5 text-sm font-semibold text-gray-700">标题</th>
                         <th class="py-1.5 text-sm font-semibold text-gray-700">分类</th>
                         <th class="py-1.5 text-sm font-semibold text-gray-700">翻墙</th>
@@ -30,6 +31,11 @@
                 <tbody>
                     <template x-for="link in paginatedLinks" :key="link.id">
                         <tr class="border-b hover:bg-gray-50">
+                            <td class="py-1.5">
+                                <img :src="link.icon || '/img/logo.svg'" :alt="link.title"
+                                    class="w-6 h-6 object-contain rounded shadow-sm border border-gray-100 bg-white"
+                                    onerror="this.src='/img/logo.svg'" referrerpolicy="no-referrer">
+                            </td>
                             <td class="py-1.5 text-sm" x-text="link.title"></td>
                             <td class="py-1.5 text-sm" x-text="getCategoryName(link.category_id)"></td>
                             <td class="py-1.5">
