@@ -34,6 +34,21 @@ CREATE TABLE IF NOT EXISTS `users` (
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 超轻量级审计日志表
+CREATE TABLE IF NOT EXISTS `audit_logs` (
+    `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `user_id` INT UNSIGNED DEFAULT NULL COMMENT '操作者ID，匿名或登录失败为NULL',
+    `action` VARCHAR(50) NOT NULL COMMENT '动作类型',
+    `description` TEXT COMMENT '详细描述',
+    `ip_address` VARCHAR(45) COMMENT 'IP地址',
+    `user_agent` VARCHAR(255) COMMENT '浏览器UA',
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    -- 索引优化
+    INDEX `idx_created_at` (`created_at`),
+    INDEX `idx_user_id` (`user_id`),
+    INDEX `idx_action` (`action`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- 插入示例数据
 INSERT IGNORE INTO `categories` (`id`, `name`, `sort_order`) VALUES
 (1, '常用工具', 1),
