@@ -151,6 +151,14 @@ feather-nav/
 │   ├── css/               # 样式文件
 │   ├── js/                # JavaScript 文件
 │   └── views/             # 视图模板
+│       ├── admin/         # 后台页面拆分组件
+│       │   ├── components/ # UI 组件
+│       │   ├── modals/    # 弹窗视图
+│       │   └── tabs/      # 标签页内容
+│       ├── auth/          # 认证相关视图
+│       ├── admin.php      # 后台管理视图
+│       ├── home.php       # 首页导航视图
+│       └── layout.php     # 全局公共布局
 ├── storage/               # 存储目录
 │   └── logs/             # 日志文件
 ├── vendor/               # Composer 依赖

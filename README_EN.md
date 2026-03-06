@@ -151,6 +151,14 @@ feather-nav/
 │   ├── css/               # Stylesheets
 │   ├── js/                # JavaScript Files
 │   └── views/             # View Templates
+│       ├── admin/         # Admin page components
+│       │   ├── components/ # UI components
+│       │   ├── modals/    # Modal views
+│       │   └── tabs/      # Tab contents
+│       ├── auth/          # Auth related views
+│       ├── admin.php      # Admin dashboard view
+│       ├── home.php       # Home navigation view
+│       └── layout.php     # Global common layout
 ├── storage/               # Storage Directory
 │   └── logs/             # Log Files
 ├── vendor/               # Composer Dependencies
