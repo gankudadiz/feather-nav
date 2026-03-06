@@ -76,10 +76,31 @@ class LinkController
 
     public function update(string $id): void
     {
-        $data = Flight::request()->data->getData();
+        $request = Flight::request();
+        
+        // 支持表单数据和JSON数据
+        $data = $request->data->getData();
+        
+        // 如果没有数据且是JSON请求，则解析原始数据
+        if (empty($data) && $request->header('Content-Type') === 'application/json') {
+            $jsonData = file_get_contents('php://input');
+            $data = json_decode($jsonData, true) ?: [];
+        }
 
         if (empty($data['title']) || empty($data['url'])) {
             Flight::json(['error' => '标题和URL不能为空'], 400);
+            return;
+        }
+
+        // Validate URL
+        if (!filter_var($data['url'], FILTER_VALIDATE_URL)) {
+            Flight::json(['error' => 'URL格式无效'], 400);
+            return;
+        }
+
+        // Validate Category ID
+        if (!empty($data['category_id']) && !is_numeric($data['category_id'])) {
+            Flight::json(['error' => '无效的分类ID'], 400);
             return;
         }
 
