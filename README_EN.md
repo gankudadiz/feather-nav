@@ -10,9 +10,12 @@ A lightweight personal navigation website built with Flight PHP + Tailwind CSS +
 - ✅ **Responsive Design**: Uses Tailwind CSS
 - ✅ **Simple Frontend**: Alpine.js for interactivity without complex frameworks
 - ✅ **User Authentication**: Simple and secure login system
-- ✅ **Category Management**: Support for categories
-- ✅ **Search Functionality**: Quickly find links
-- ✅ **Icon Support**: Support for custom icons and auto-fetching
+- ✅ **Category Management**: Support for categories with link association check
+- ✅ **Link Management**: Support for VPN markers, auto-fetching/manual icon upload
+- ✅ **Search Functionality**: Quickly find links, filter by status like "No Icon"
+- ✅ **Data Statistics**: Admin dashboard with real-time stats for links, categories, and exceptions
+- ✅ **Audit Logs**: Records key admin operations (Login, CRUD, etc.) for traceability
+- ✅ **UX Optimization**: Hash-based routing for browser back/forward support (SPA-like experience)
 
 ## Tech Stack
 
