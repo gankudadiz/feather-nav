@@ -41,10 +41,12 @@ class AuthController
         }
 
         // Check captcha
-        if (CaptchaHelper::requiresCaptcha($username)) {
+        // 修复：如果 CaptchaHelper 认为需要验证码，或者用户提交了验证码（前端显示了验证码框），则必须校验
+        $hasCaptchaInput = !empty($captcha);
+        if (CaptchaHelper::requiresCaptcha($username) || $hasCaptchaInput) {
             $sessionCaptcha = $_SESSION['captcha_answer'] ?? null;
 
-            if (empty($captcha) || !is_numeric($captcha) || (int)$captcha !== $sessionCaptcha) {
+            if ($sessionCaptcha === null || empty($captcha) || !is_numeric($captcha) || (int)$captcha !== $sessionCaptcha) {
                 LogHelper::log('auth_login_captcha', "登录失败：验证码错误 (用户: $username)");
                 CaptchaHelper::recordFailure($username);
                 unset($_SESSION['captcha_answer']);
