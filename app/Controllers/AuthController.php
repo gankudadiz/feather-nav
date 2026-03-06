@@ -7,6 +7,7 @@ namespace App\Controllers;
 use Flight;
 use App\Middleware\CsrfMiddleware;
 use App\Helpers\CaptchaHelper;
+use App\Helpers\LogHelper;
 
 class AuthController
 {
@@ -33,6 +34,7 @@ class AuthController
 
         // Check lock
         if (CaptchaHelper::isLocked($username)) {
+            LogHelper::log('auth_login_locked', "登录拦截：账号已锁定 (用户: $username)");
             $baseUrl = $_ENV['APP_URL'] ?? 'http://localhost:8080';
             Flight::redirect($baseUrl . '/auth/login?error=locked');
             return;
@@ -43,6 +45,7 @@ class AuthController
             $sessionCaptcha = $_SESSION['captcha_answer'] ?? null;
 
             if (empty($captcha) || !is_numeric($captcha) || (int)$captcha !== $sessionCaptcha) {
+                LogHelper::log('auth_login_captcha', "登录失败：验证码错误 (用户: $username)");
                 CaptchaHelper::recordFailure($username);
                 unset($_SESSION['captcha_answer']);
 
@@ -72,12 +75,16 @@ class AuthController
             
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['username'] = $user['username'];
+
+            // 记录成功登录日志
+            LogHelper::log('auth_login_success', "登录成功 (用户: $username)", $user['id']);
             
             // 使用完整的URL进行重定向
             $baseUrl = $_ENV['APP_URL'] ?? 'http://localhost:8080';
             Flight::redirect($baseUrl . '/admin');
         } else {
             // 登录失败，记录失败次数
+            LogHelper::log('auth_login_failed', "登录失败：凭据无效 (用户: $username)");
             CaptchaHelper::recordFailure($username);
 
             $baseUrl = $_ENV['APP_URL'] ?? 'http://localhost:8080';
@@ -87,7 +94,10 @@ class AuthController
 
     public function logout(): void
     {
-        session_start();
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        LogHelper::log('auth_logout', '退出登录');
         session_destroy();
         $baseUrl = $_ENV['APP_URL'] ?? 'http://localhost:8080';
         Flight::redirect($baseUrl . '/');

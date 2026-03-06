@@ -45,8 +45,8 @@ Flight::after('start', function () {
     // script-src 添加 'unsafe-eval' 是因为 Alpine.js 需要执行 eval 风格的代码执行
     // connect-src 允许本地 Vite WebSocket
     $csp = "default-src 'self'; ";
-    $csp .= "script-src 'self' 'unsafe-inline' 'unsafe-eval' " . ($isLocal ? "http://localhost:5173" : "") . "; ";
-    $csp .= "style-src 'self' 'unsafe-inline' " . ($isLocal ? "http://localhost:5173" : "") . "; ";
+    $csp .= "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com " . ($isLocal ? "http://localhost:5173" : "") . "; ";
+    $csp .= "style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com " . ($isLocal ? "http://localhost:5173" : "") . "; ";
     $csp .= "img-src 'self' data: https: " . ($isLocal ? "http://localhost:5173" : "") . "; ";
     $csp .= "font-src 'self' data: https:; ";
     $csp .= "connect-src 'self' " . ($isLocal ? "ws://localhost:5173 http://localhost:5173" : "") . ";";

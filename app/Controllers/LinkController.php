@@ -6,6 +6,7 @@ namespace App\Controllers;
 
 use Flight;
 use App\Helpers\FaviconHelper;
+use App\Helpers\LogHelper;
 
 class LinkController
 {
@@ -71,7 +72,10 @@ class LinkController
             $data['sort_order'] ?? 0
         ]);
 
-        Flight::json(['id' => $db->lastInsertId(), 'message' => '创建成功'], 201);
+        $newId = $db->lastInsertId();
+        LogHelper::log('link_create', "添加链接: {$data['title']} (ID: $newId)");
+
+        Flight::json(['id' => $newId, 'message' => '创建成功'], 201);
     }
 
     public function update(string $id): void
@@ -127,14 +131,24 @@ class LinkController
             $id
         ]);
 
+        LogHelper::log('link_update', "更新链接: {$data['title']} (ID: $id)");
+
         Flight::json(['message' => '更新成功']);
     }
 
     public function destroy(string $id): void
     {
         $db = Flight::db()->getConnection();
+
+        // 获取名称以便记录日志
+        $nameStmt = $db->prepare('SELECT title FROM links WHERE id = ?');
+        $nameStmt->execute([$id]);
+        $linkTitle = $nameStmt->fetchColumn() ?: "未知(ID:$id)";
+
         $stmt = $db->prepare('DELETE FROM links WHERE id = ?');
         $stmt->execute([$id]);
+
+        LogHelper::log('link_delete', "删除链接: $linkTitle (ID: $id)");
 
         Flight::json(['message' => '删除成功']);
     }
@@ -147,7 +161,7 @@ class LinkController
         $db = Flight::db()->getConnection();
         
         // 1. 获取链接信息
-        $stmt = $db->prepare('SELECT url FROM links WHERE id = ?');
+        $stmt = $db->prepare('SELECT title, url FROM links WHERE id = ?');
         $stmt->execute([$id]);
         $link = $stmt->fetch();
 
@@ -167,6 +181,8 @@ class LinkController
         // 3. 更新数据库
         $stmt = $db->prepare('UPDATE links SET icon = ? WHERE id = ?');
         $stmt->execute([$icon, $id]);
+
+        LogHelper::log('link_refresh_icon', "刷新图标: {$link['title']} (ID: $id)");
 
         Flight::json(['message' => '图标更新成功', 'icon' => $icon]);
     }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use Flight;
+use App\Helpers\LogHelper;
 
 class CategoryController
 {
@@ -44,7 +45,10 @@ class CategoryController
         $stmt = $db->prepare('INSERT INTO categories (name, sort_order) VALUES (?, ?)');
         $stmt->execute([$data['name'], $data['sort_order'] ?? 0]);
 
-        Flight::json(['id' => $db->lastInsertId(), 'message' => '创建成功'], 201);
+        $newId = $db->lastInsertId();
+        LogHelper::log('category_create', "创建分类: {$data['name']} (ID: $newId)");
+
+        Flight::json(['id' => $newId, 'message' => '创建成功'], 201);
     }
 
     public function update(string $id): void
@@ -65,12 +69,19 @@ class CategoryController
         $stmt = $db->prepare('UPDATE categories SET name = ?, sort_order = ? WHERE id = ?');
         $stmt->execute([$data['name'], $data['sort_order'] ?? 0, $id]);
 
+        LogHelper::log('category_update', "更新分类: {$data['name']} (ID: $id)");
+
         Flight::json(['message' => '更新成功']);
     }
 
     public function destroy(string $id): void
     {
         $db = Flight::db()->getConnection();
+
+        // 获取名称以便记录日志
+        $nameStmt = $db->prepare('SELECT name FROM categories WHERE id = ?');
+        $nameStmt->execute([$id]);
+        $categoryName = $nameStmt->fetchColumn() ?: "未知(ID:$id)";
 
         // 删除前先统计该分类下的链接数量
         $countStmt = $db->prepare('SELECT COUNT(*) FROM links WHERE category_id = ?');
@@ -79,6 +90,8 @@ class CategoryController
 
         $stmt = $db->prepare('DELETE FROM categories WHERE id = ?');
         $stmt->execute([$id]);
+
+        LogHelper::log('category_delete', "删除分类: $categoryName (关联链接数: $linkCount)");
 
         Flight::json([
             'message' => '删除成功',
@@ -110,6 +123,7 @@ class CategoryController
             }
 
             $db->commit();
+            LogHelper::log('category_batch_reorder', "批量调整分类排序 (共 " . count($data['updates']) . " 个)");
             Flight::json(['success' => true, 'message' => '批量更新成功']);
         } catch (\Exception $e) {
             $db->rollBack();
