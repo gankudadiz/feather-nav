@@ -8,7 +8,7 @@ use App\Controllers\LinkController;
 use App\Controllers\AuthController;
 use App\Controllers\UploadController;
 use App\Controllers\AuditLogController;
-use App\Middleware\CsrfMiddleware;
+use App\Controllers\DashboardController;
 
 // 通用认证函数
 function requireAuth() {
@@ -16,7 +16,7 @@ function requireAuth() {
     if (session_status() === PHP_SESSION_NONE) {
         session_start();
     }
-    
+
     if (!isset($_SESSION['user_id'])) {
         // 检查是否是 AJAX/API 请求
         if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
@@ -59,6 +59,9 @@ Flight::group('/api', function () {
 
 // 受保护 API 路由（需要认证）
 Flight::group('/api', function () {
+    // 数据统计
+    Flight::route('GET /statistics', function() { requireAuth(); $d = new DashboardController(); $d->getStatistics(); });
+
     // 分类 - 管理
     Flight::route('POST /categories', function() { requireAuth(); validateCsrf(); $c = new CategoryController(); $c->store(); });
     Flight::route('PUT /categories/@id', function($id) { requireAuth(); validateCsrf(); $c = new CategoryController(); $c->update($id); });

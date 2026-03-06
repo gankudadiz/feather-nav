@@ -5,8 +5,18 @@
 
         <!-- 添加搜索栏 -->
         <div class="mb-4 flex flex-col md:flex-row gap-3">
-            <input type="text" x-model="linkSearchTerm" @input.debounce.300ms="filterLinks" placeholder="搜索标题/URL/描述..."
-                class="flex-1 px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <div class="flex-1 relative">
+                <input type="text" x-model="linkSearchTerm" @input.debounce.300ms="filterLinks" placeholder="搜索标题/URL/描述..."
+                    class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <div x-show="filterNoIcon" class="absolute right-3 top-2 flex items-center space-x-2">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                        无图标
+                    </span>
+                    <button @click="filterNoIcon = false; filterLinks()" class="text-gray-400 hover:text-gray-600">
+                        ✕
+                    </button>
+                </div>
+            </div>
             <select x-model="selectedCategory" @change="filterLinks"
                 class="px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
                 <option value="">所有分类</option>

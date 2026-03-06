@@ -16,7 +16,7 @@ function adminInit() {
         },
 
         // 标签页状态
-        currentTab: 'links', // 默认显示"所有链接"标签
+        currentTab: 'statistics', // 默认显示"数据统计"标签
 
         // 编辑相关数据
         showEditCategoryModal: false,
@@ -29,9 +29,20 @@ function adminInit() {
         paginatedLinks: [],
         linkSearchTerm: '',
         selectedCategory: '',
+        filterNoIcon: false, // 新增：是否只看无图标链接
         currentPage: 1,
         perPage: 10,
         totalPages: 0,
+
+        // 统计数据
+        stats: {
+            total_links: 0,
+            vpn_links: 0,
+            total_categories: 0,
+            uncategorized_links: 0,
+            no_icon_links: 0,
+            vpn_percentage: 0
+        },
 
         // 分类排序
         categoryUpdateTimer: null,
@@ -61,9 +72,34 @@ function adminInit() {
             if (tokenMeta) {
                 this.csrfToken = tokenMeta.getAttribute('content');
             }
+
+            // 处理 Hash 路由
+            this.handleHashRoute();
+            window.addEventListener('hashchange', () => this.handleHashRoute());
+
+            // 监听 currentTab 变化并更新 Hash
+            this.$watch('currentTab', value => {
+                if (window.location.hash !== '#' + value) {
+                    window.location.hash = value;
+                }
+            });
             
-            await this.loadData();
+            await Promise.all([
+                this.loadData(),
+                this.loadStatistics()
+            ]);
             this.filterLinks(); // 初始化时应用筛选
+        },
+
+        handleHashRoute() {
+            const hash = window.location.hash.replace('#', '');
+            const validTabs = ['statistics', 'links', 'addLink', 'categories', 'auditLogs'];
+            if (hash && validTabs.includes(hash)) {
+                this.currentTab = hash;
+            } else if (!hash) {
+                // 默认跳转到 statistics 并设置 hash
+                window.location.hash = 'statistics';
+            }
         },
 
         async loadData() {
@@ -74,6 +110,17 @@ function adminInit() {
             this.categories = await categoriesRes.json();
             this.links = await linksRes.json();
             this.filteredLinks = [...this.links]; // 初始化筛选列表
+        },
+
+        async loadStatistics() {
+            try {
+                const res = await fetch('/api/statistics');
+                if (res.ok) {
+                    this.stats = await res.json();
+                }
+            } catch (e) {
+                console.error('加载统计数据失败:', e);
+            }
         },
 
         async addCategory() {
@@ -116,6 +163,10 @@ function adminInit() {
                 filtered = filtered.filter(link =>
                     link.category_id == this.selectedCategory
                 );
+            }
+
+            if (this.filterNoIcon) {
+                filtered = filtered.filter(link => !link.icon || link.icon === '');
             }
 
             this.filteredLinks = filtered;
