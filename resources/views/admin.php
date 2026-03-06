@@ -24,13 +24,19 @@
                 class="whitespace-nowrap py-3 px-1 border-b-2 text-sm transition">
                 📁 分类管理
             </button>
+            <button @click="currentTab = 'auditLogs'; loadAuditLogs()"
+                :class="currentTab === 'auditLogs' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                class="whitespace-nowrap py-3 px-1 border-b-2 text-sm transition">
+                🛡️ 审计日志
+            </button>
         </nav>
     </div>
 
     <!-- 标签页内容区域 -->
-    <?php include __DIR__ . '/admin/tabs/link_list.php'; ?>
-    <?php include __DIR__ . '/admin/tabs/link_add.php'; ?>
-    <?php include __DIR__ . '/admin/tabs/category_list.php'; ?>
+    <div x-show="currentTab === 'links'"><?php include __DIR__ . '/admin/tabs/link_list.php'; ?></div>
+    <div x-show="currentTab === 'addLink'"><?php include __DIR__ . '/admin/tabs/link_add.php'; ?></div>
+    <div x-show="currentTab === 'categories'"><?php include __DIR__ . '/admin/tabs/category_list.php'; ?></div>
+    <div x-show="currentTab === 'auditLogs'"><?php include __DIR__ . '/admin/tabs/audit_log.php'; ?></div>
 
     <!-- 引入模态框 -->
     <?php include __DIR__ . '/admin/modals/edit_link.php'; ?>

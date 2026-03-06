@@ -3,6 +3,8 @@ function adminInit() {
         csrfToken: '',
         categories: [],
         links: [],
+        auditLogs: [],
+        selectedAuditAction: '',
         newCategory: '',
         newLink: {
             category_id: '',
@@ -453,6 +455,28 @@ function adminInit() {
                 this.dialog.resolve = resolve;
                 this.dialog.visible = true;
             });
+        },
+
+        // 加载审计日志
+        async loadAuditLogs() {
+            try {
+                const res = await fetch('/api/audit-logs');
+                if (res.ok) {
+                    this.auditLogs = await res.json();
+                } else {
+                    console.error('加载审计日志失败');
+                }
+            } catch (e) {
+                console.error('加载审计日志出错:', e);
+            }
+        },
+
+        // 获取筛选后的审计日志
+        getFilteredAuditLogs() {
+            if (!this.selectedAuditAction) {
+                return this.auditLogs;
+            }
+            return this.auditLogs.filter(log => log.action === this.selectedAuditAction);
         }
     };
 }
