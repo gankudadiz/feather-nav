@@ -22,10 +22,10 @@ class LinkController
     public function store(): void
     {
         $request = Flight::request();
-        
+
         // 支持表单数据和JSON数据
         $data = $request->data->getData();
-        
+
         // 如果没有数据且是JSON请求，则解析原始数据
         if (empty($data) && $request->header('Content-Type') === 'application/json') {
             $jsonData = file_get_contents('php://input');
@@ -67,7 +67,7 @@ class LinkController
             $data['title'],
             $data['url'],
             $data['description'] ?? null,
-            isset($data['need_vpn']) ? (int)$data['need_vpn'] : 0,
+            isset($data['need_vpn']) ? (int) $data['need_vpn'] : 0,
             $data['icon'] ?? null,
             $data['sort_order'] ?? 0
         ]);
@@ -81,10 +81,10 @@ class LinkController
     public function update(string $id): void
     {
         $request = Flight::request();
-        
+
         // 支持表单数据和JSON数据
         $data = $request->data->getData();
-        
+
         // 如果没有数据且是JSON请求，则解析原始数据
         if (empty($data) && $request->header('Content-Type') === 'application/json') {
             $jsonData = file_get_contents('php://input');
@@ -108,6 +108,12 @@ class LinkController
             return;
         }
 
+        // Validate Link ID
+        if (!is_numeric($id)) {
+            Flight::json(['error' => '无效的链接ID'], 400);
+            return;
+        }
+
         // 如果提供了图标URL且不是本地上传的，尝试下载并保存到本地
         if (!empty($data['icon']) && !str_starts_with($data['icon'], '/uploads/favicons/')) {
             $localIcon = FaviconHelper::downloadImage($data['icon']);
@@ -117,6 +123,15 @@ class LinkController
         }
 
         $db = Flight::db()->getConnection();
+
+        // 检查记录是否存在
+        $checkStmt = $db->prepare('SELECT id FROM links WHERE id = ?');
+        $checkStmt->execute([$id]);
+        if (!$checkStmt->fetchColumn()) {
+            Flight::json(['error' => '未找到该链接'], 404);
+            return;
+        }
+
         $stmt = $db->prepare(
             'UPDATE links SET category_id = ?, title = ?, url = ?, description = ?, need_vpn = ?, icon = ?, sort_order = ? WHERE id = ?'
         );
@@ -125,7 +140,7 @@ class LinkController
             $data['title'],
             $data['url'],
             $data['description'] ?? null,
-            isset($data['need_vpn']) ? (int)$data['need_vpn'] : 0,
+            isset($data['need_vpn']) ? (int) $data['need_vpn'] : 0,
             $data['icon'] ?? null,
             $data['sort_order'] ?? 0,
             $id
@@ -138,12 +153,22 @@ class LinkController
 
     public function destroy(string $id): void
     {
+        if (!is_numeric($id)) {
+            Flight::json(['error' => '无效的链接ID'], 400);
+            return;
+        }
+
         $db = Flight::db()->getConnection();
 
-        // 获取名称以便记录日志
+        // 获取名称以便记录日志，同时检查记录是否存在
         $nameStmt = $db->prepare('SELECT title FROM links WHERE id = ?');
         $nameStmt->execute([$id]);
-        $linkTitle = $nameStmt->fetchColumn() ?: "未知(ID:$id)";
+        $linkTitle = $nameStmt->fetchColumn();
+
+        if ($linkTitle === false) {
+            Flight::json(['error' => '未找到该链接'], 404);
+            return;
+        }
 
         $stmt = $db->prepare('DELETE FROM links WHERE id = ?');
         $stmt->execute([$id]);
@@ -155,11 +180,16 @@ class LinkController
 
     public function refreshIcon(string $id): void
     {
+        if (!is_numeric($id)) {
+            Flight::json(['error' => '无效的链接ID'], 400);
+            return;
+        }
+
         // 验证权限后立即关闭 Session 写入，释放锁，避免阻塞其他并发请求
         session_write_close();
 
         $db = Flight::db()->getConnection();
-        
+
         // 1. 获取链接信息
         $stmt = $db->prepare('SELECT title, url FROM links WHERE id = ?');
         $stmt->execute([$id]);

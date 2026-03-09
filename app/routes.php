@@ -11,7 +11,8 @@ use App\Controllers\AuditLogController;
 use App\Controllers\DashboardController;
 
 // 通用认证函数
-function requireAuth() {
+function requireAuth()
+{
     // 确保session已经启动
     if (session_status() === PHP_SESSION_NONE) {
         session_start();
@@ -19,8 +20,10 @@ function requireAuth() {
 
     if (!isset($_SESSION['user_id'])) {
         // 检查是否是 AJAX/API 请求
-        if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
-            strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+        if (
+            !empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+            strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest'
+        ) {
             Flight::json(['error' => 'Unauthorized'], 401);
         } else {
             // 使用完整的URL进行重定向
@@ -31,8 +34,9 @@ function requireAuth() {
     }
 }
 
-function validateCsrf() {
-    $csrf = new CsrfMiddleware();
+function validateCsrf()
+{
+    $csrf = new \App\Middleware\CsrfMiddleware();
     if (!$csrf->validateToken()) {
         Flight::json(['error' => 'CSRF token验证失败'], 403);
         exit;
@@ -60,29 +64,71 @@ Flight::group('/api', function () {
 // 受保护 API 路由（需要认证）
 Flight::group('/api', function () {
     // 数据统计
-    Flight::route('GET /statistics', function() { requireAuth(); $d = new DashboardController(); $d->getStatistics(); });
+    Flight::route('GET /statistics', function () {
+        requireAuth();
+        $d = new DashboardController();
+        $d->getStatistics(); });
 
     // 分类 - 管理
-    Flight::route('POST /categories', function() { requireAuth(); validateCsrf(); $c = new CategoryController(); $c->store(); });
-    Flight::route('PUT /categories/@id', function($id) { requireAuth(); validateCsrf(); $c = new CategoryController(); $c->update($id); });
-    Flight::route('DELETE /categories/@id', function($id) { requireAuth(); validateCsrf(); $c = new CategoryController(); $c->destroy($id); });
-    Flight::route('POST /categories/batch-update', function() { requireAuth(); validateCsrf(); $c = new CategoryController(); $c->batchUpdate(); });
+    Flight::route('POST /categories', function () {
+        requireAuth();
+        validateCsrf();
+        $c = new CategoryController();
+        $c->store(); });
+    Flight::route('PUT /categories/@id', function ($id) {
+        requireAuth();
+        validateCsrf();
+        $c = new CategoryController();
+        $c->update($id); });
+    Flight::route('DELETE /categories/@id', function ($id) {
+        requireAuth();
+        validateCsrf();
+        $c = new CategoryController();
+        $c->destroy($id); });
+    Flight::route('POST /categories/batch-update', function () {
+        requireAuth();
+        validateCsrf();
+        $c = new CategoryController();
+        $c->batchUpdate(); });
 
     // 链接 - 管理
-    Flight::route('POST /links', function() { requireAuth(); validateCsrf(); $l = new LinkController(); $l->store(); });
-    Flight::route('PUT /links/@id', function($id) { requireAuth(); validateCsrf(); $l = new LinkController(); $l->update($id); });
-    Flight::route('POST /links/@id/icon', function($id) { requireAuth(); validateCsrf(); $l = new LinkController(); $l->refreshIcon($id); });
-    Flight::route('DELETE /links/@id', function($id) { requireAuth(); validateCsrf(); $l = new LinkController(); $l->destroy($id); });
+    Flight::route('POST /links', function () {
+        requireAuth();
+        validateCsrf();
+        $l = new LinkController();
+        $l->store(); });
+    Flight::route('PUT /links/@id', function ($id) {
+        requireAuth();
+        validateCsrf();
+        $l = new LinkController();
+        $l->update($id); });
+    Flight::route('POST /links/@id/icon', function ($id) {
+        requireAuth();
+        validateCsrf();
+        $l = new LinkController();
+        $l->refreshIcon($id); });
+    Flight::route('DELETE /links/@id', function ($id) {
+        requireAuth();
+        validateCsrf();
+        $l = new LinkController();
+        $l->destroy($id); });
 
     // 审计日志 - 管理
-    Flight::route('GET /audit-logs', function() { requireAuth(); $a = new AuditLogController(); $a->index(); });
+    Flight::route('GET /audit-logs', function () {
+        requireAuth();
+        $a = new AuditLogController();
+        $a->index(); });
 
     // 文件上传
-    Flight::route('POST /upload/icon', function() { requireAuth(); validateCsrf(); $u = new UploadController(); $u->uploadIcon(); });
+    Flight::route('POST /upload/icon', function () {
+        requireAuth();
+        validateCsrf();
+        $u = new UploadController();
+        $u->uploadIcon(); });
 });
 
 // 管理页面（需要认证）
-Flight::route('/admin', function() {
+Flight::route('/admin', function () {
     requireAuth();
     $h = new HomeController();
     $h->admin();

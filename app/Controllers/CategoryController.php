@@ -65,7 +65,22 @@ class CategoryController
             return;
         }
 
+        // Validate Category ID
+        if (!is_numeric($id)) {
+            Flight::json(['error' => '无效的分类ID'], 400);
+            return;
+        }
+
         $db = Flight::db()->getConnection();
+
+        // 检查记录是否存在
+        $checkStmt = $db->prepare('SELECT id FROM categories WHERE id = ?');
+        $checkStmt->execute([$id]);
+        if (!$checkStmt->fetchColumn()) {
+            Flight::json(['error' => '未找到该分类'], 404);
+            return;
+        }
+
         $stmt = $db->prepare('UPDATE categories SET name = ?, sort_order = ? WHERE id = ?');
         $stmt->execute([$data['name'], $data['sort_order'] ?? 0, $id]);
 
@@ -76,12 +91,22 @@ class CategoryController
 
     public function destroy(string $id): void
     {
+        if (!is_numeric($id)) {
+            Flight::json(['error' => '无效的分类ID'], 400);
+            return;
+        }
+
         $db = Flight::db()->getConnection();
 
-        // 获取名称以便记录日志
+        // 获取名称以便记录日志，同时检查该分类是否存在
         $nameStmt = $db->prepare('SELECT name FROM categories WHERE id = ?');
         $nameStmt->execute([$id]);
-        $categoryName = $nameStmt->fetchColumn() ?: "未知(ID:$id)";
+        $categoryName = $nameStmt->fetchColumn();
+
+        if ($categoryName === false) {
+            Flight::json(['error' => '未找到该分类'], 404);
+            return;
+        }
 
         // 删除前先统计该分类下的链接数量
         $countStmt = $db->prepare('SELECT COUNT(*) FROM links WHERE category_id = ?');
