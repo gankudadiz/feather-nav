@@ -1,6 +1,6 @@
 /vendor/
 /node_modules/
-/public/assets/
+# /public/assets/
 .env
 .DS_Store
 Thumbs.db
