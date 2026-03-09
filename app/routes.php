@@ -112,6 +112,11 @@ Flight::group('/api', function () {
         validateCsrf();
         $l = new LinkController();
         $l->destroy($id); });
+    Flight::route('POST /links/batch-update', function () {
+        requireAuth();
+        validateCsrf();
+        $l = new LinkController();
+        $l->batchUpdate(); });
 
     // 审计日志 - 管理
     Flight::route('GET /audit-logs', function () {

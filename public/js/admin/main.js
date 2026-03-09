@@ -44,8 +44,9 @@ function adminInit() {
             vpn_percentage: 0
         },
 
-        // 分类排序
+        // 排序定时器
         categoryUpdateTimer: null,
+        linkUpdateTimer: null,
 
         // Toast 组件
         toast: {
@@ -163,6 +164,10 @@ function adminInit() {
                 filtered = filtered.filter(link =>
                     link.category_id == this.selectedCategory
                 );
+                // 选中分类时，调大每页显示数量，方便排序
+                this.perPage = 1000;
+            } else {
+                this.perPage = 10;
             }
 
             if (this.filterNoIcon) {
@@ -333,6 +338,71 @@ function adminInit() {
                 }
             } catch (e) {
                 this.showToast('链接删除失败：' + e.message, 'error');
+            }
+        },
+
+        // 移动链接排序
+        async moveLink(id, direction) {
+            // 只有在选中分类的情况下才允许排序，避免逻辑混乱
+            if (!this.selectedCategory) {
+                this.showToast('请先选择一个分类再进行排序', 'error');
+                return;
+            }
+
+            const index = this.filteredLinks.findIndex(l => l.id === id);
+            const newIndex = index + direction;
+
+            if (newIndex < 0 || newIndex >= this.filteredLinks.length) return;
+
+            // 1. 在 filteredLinks 中交换位置
+            const currentItem = this.filteredLinks[index];
+            const nextItem = this.filteredLinks[newIndex];
+            
+            this.filteredLinks[index] = nextItem;
+            this.filteredLinks[newIndex] = currentItem;
+
+            // 2. 重新分配排序值并同步到主 links 数组
+            this.filteredLinks.forEach((link, i) => {
+                link.sort_order = i + 1;
+                // 同步回原始数组
+                const mainIndex = this.links.findIndex(l => l.id === link.id);
+                if (mainIndex !== -1) {
+                    this.links[mainIndex].sort_order = link.sort_order;
+                }
+            });
+
+            // 3. 更新分页显示
+            this.updatePaginatedLinks();
+
+            // 4. 延迟更新到服务器
+            clearTimeout(this.linkUpdateTimer);
+            this.linkUpdateTimer = setTimeout(() => {
+                this.batchUpdateLinkOrder();
+            }, 500);
+        },
+
+        // 批量更新链接排序到服务器
+        async batchUpdateLinkOrder() {
+            // 只发送当前分类下的链接排序
+            const updates = this.filteredLinks.map(link => ({
+                id: link.id,
+                sort_order: link.sort_order
+            }));
+
+            try {
+                const res = await fetch('/api/links/batch-update', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': this.csrfToken
+                    },
+                    body: JSON.stringify({ updates })
+                });
+                if (!res.ok) {
+                    console.error('批量更新链接排序失败');
+                }
+            } catch (e) {
+                console.error('更新链接排序出错:', e);
             }
         },
 

@@ -35,6 +35,7 @@
                         <th class="py-1.5 text-sm font-semibold text-gray-700">分类</th>
                         <th class="py-1.5 text-sm font-semibold text-gray-700">翻墙</th>
                         <th class="py-1.5 text-sm font-semibold text-gray-700">URL</th>
+                        <th x-show="selectedCategory !== ''" class="py-1.5 text-sm font-semibold text-gray-700 w-20 text-center">排序</th>
                         <th class="py-1.5 text-sm font-semibold text-gray-700">操作</th>
                     </tr>
                 </thead>
@@ -62,6 +63,24 @@
                                 <a :href="link.url" target="_blank"
                                     class="text-blue-500 hover:underline truncate block max-w-xs text-sm"
                                     x-text="link.url"></a>
+                            </td>
+                            <td x-show="selectedCategory !== ''" class="py-1.5 text-center">
+                                <div class="flex justify-center gap-1">
+                                    <button @click="moveLink(link.id, -1)"
+                                        class="p-1 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 border border-blue-200 transition"
+                                        title="上移">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                                        </svg>
+                                    </button>
+                                    <button @click="moveLink(link.id, 1)"
+                                        class="p-1 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 border border-blue-200 transition"
+                                        title="下移">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+                                </div>
                             </td>
                             <td class="py-1.5">
                                 <div class="flex gap-1.5">
