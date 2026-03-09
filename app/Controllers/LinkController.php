@@ -10,6 +10,88 @@ use App\Helpers\LogHelper;
 
 class LinkController
 {
+    public function batchDestroy(): void
+    {
+        $jsonData = file_get_contents('php://input');
+        $data = json_decode($jsonData, true);
+
+        if (empty($data['ids']) || !is_array($data['ids'])) {
+            Flight::json(['error' => '无效的 ID 列表'], 400);
+            return;
+        }
+
+        $db = Flight::db()->getConnection();
+        $db->beginTransaction();
+
+        try {
+            $ids = array_filter($data['ids'], 'is_numeric');
+            if (empty($ids)) {
+                throw new \Exception('没有有效的 ID');
+            }
+
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            $stmt = $db->prepare("DELETE FROM links WHERE id IN ($placeholders)");
+            $stmt->execute($ids);
+
+            $count = count($ids);
+            $db->commit();
+            LogHelper::log('link_batch_delete', "批量删除链接 (共 $count 个)");
+            Flight::json(['success' => true, 'message' => "成功删除 $count 条链接"]);
+        } catch (\Exception $e) {
+            $db->rollBack();
+            Flight::json(['error' => '删除失败: ' . $e->getMessage()], 500);
+        }
+    }
+
+    public function batchMove(): void
+    {
+        $jsonData = file_get_contents('php://input');
+        $data = json_decode($jsonData, true);
+
+        if (empty($data['ids']) || !is_array($data['ids']) || !isset($data['category_id'])) {
+            Flight::json(['error' => '参数不完整'], 400);
+            return;
+        }
+
+        $db = Flight::db()->getConnection();
+        $db->beginTransaction();
+
+        try {
+            $ids = array_filter($data['ids'], 'is_numeric');
+            if (empty($ids)) {
+                throw new \Exception('没有有效的 ID');
+            }
+
+            $categoryId = $data['category_id'] ?: null;
+            
+            // 校验分类是否存在
+            if ($categoryId !== null) {
+                $checkCat = $db->prepare('SELECT name FROM categories WHERE id = ?');
+                $checkCat->execute([$categoryId]);
+                $categoryName = $checkCat->fetchColumn();
+                if (!$categoryName) {
+                    throw new \Exception('目标分类不存在');
+                }
+            } else {
+                $categoryName = '未分类';
+            }
+
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            $stmt = $db->prepare("UPDATE links SET category_id = ? WHERE id IN ($placeholders)");
+            
+            $params = array_merge([$categoryId], $ids);
+            $stmt->execute($params);
+
+            $count = count($ids);
+            $db->commit();
+            LogHelper::log('link_batch_move', "批量转移链接至 [$categoryName] (共 $count 个)");
+            Flight::json(['success' => true, 'message' => "成功转移 $count 条链接至 $categoryName"]);
+        } catch (\Exception $e) {
+            $db->rollBack();
+            Flight::json(['error' => '移动失败: ' . $e->getMessage()], 500);
+        }
+    }
+
     public function index(): void
     {
         $db = Flight::db()->getConnection();

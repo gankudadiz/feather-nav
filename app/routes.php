@@ -92,6 +92,16 @@ Flight::group('/api', function () {
         $c->batchUpdate(); });
 
     // 链接 - 管理
+    Flight::route('DELETE /links/batch', function () {
+        requireAuth();
+        validateCsrf();
+        $l = new LinkController();
+        $l->batchDestroy(); });
+    Flight::route('PUT /links/batch-move', function () {
+        requireAuth();
+        validateCsrf();
+        $l = new LinkController();
+        $l->batchMove(); });
     Flight::route('POST /links', function () {
         requireAuth();
         validateCsrf();
