@@ -83,13 +83,15 @@ function adminInit() {
                 if (window.location.hash !== '#' + value) {
                     window.location.hash = value;
                 }
+                // 切换标签时自动加载对应数据
+                this.loadTabData(value);
             });
             
-            await Promise.all([
-                this.loadData(),
-                this.loadStatistics()
-            ]);
-            this.filterLinks(); // 初始化时应用筛选
+            // 初始加载当前标签页的数据
+            await this.loadTabData(this.currentTab);
+            
+            // 总是后台加载一次基础数据，确保分类下拉列表等可用
+            this.loadData().then(() => this.filterLinks());
         },
 
         handleHashRoute() {
@@ -100,6 +102,24 @@ function adminInit() {
             } else if (!hash) {
                 // 默认跳转到 statistics 并设置 hash
                 window.location.hash = 'statistics';
+            }
+        },
+
+        // 根据标签页加载对应数据
+        async loadTabData(tab) {
+            switch (tab) {
+                case 'statistics':
+                    await this.loadStatistics();
+                    break;
+                case 'auditLogs':
+                    await this.loadAuditLogs();
+                    break;
+                case 'links':
+                case 'categories':
+                case 'addLink':
+                    await this.loadData();
+                    this.filterLinks();
+                    break;
             }
         },
 

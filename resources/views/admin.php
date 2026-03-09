@@ -9,7 +9,7 @@
     <!-- 标签页导航 -->
     <div class="mb-4 font-medium border-b border-gray-200">
         <nav class="-mb-px flex space-x-8">
-            <button @click="currentTab = 'statistics'; loadStatistics()"
+            <button @click="currentTab = 'statistics'"
                 :class="currentTab === 'statistics' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
                 class="whitespace-nowrap py-3 px-1 border-b-2 text-sm transition">
                 📊 数据统计
@@ -29,7 +29,7 @@
                 class="whitespace-nowrap py-3 px-1 border-b-2 text-sm transition">
                 📁 分类管理
             </button>
-            <button @click="currentTab = 'auditLogs'; loadAuditLogs()"
+            <button @click="currentTab = 'auditLogs'"
                 :class="currentTab === 'auditLogs' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
                 class="whitespace-nowrap py-3 px-1 border-b-2 text-sm transition">
                 🛡️ 审计日志
