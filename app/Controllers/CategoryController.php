@@ -12,7 +12,13 @@ class CategoryController
     public function index(): void
     {
         $db = Flight::db()->getConnection();
-        $stmt = $db->query('SELECT * FROM categories ORDER BY sort_order ASC');
+        $stmt = $db->query('
+            SELECT c.*, COUNT(l.id) as link_count 
+            FROM categories c 
+            LEFT JOIN links l ON c.id = l.category_id 
+            GROUP BY c.id 
+            ORDER BY c.sort_order ASC
+        ');
         $categories = $stmt->fetchAll();
 
         Flight::json($categories);

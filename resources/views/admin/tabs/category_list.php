@@ -17,7 +17,18 @@
             <ul class="space-y-2">
                 <template x-for="cat in categories" :key="cat.id">
                     <li class="flex items-center justify-between p-1.5 bg-gray-50 rounded hover:bg-gray-100 transition">
-                        <span x-text="cat.name" class="text-sm"></span>
+                        <div class="flex items-center gap-2">
+                            <span x-text="cat.name" class="text-sm font-medium"></span>
+                            <span x-show="cat.link_count > 0" x-text="cat.link_count" 
+                                class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                                title="包含链接数">
+                            </span>
+                            <span x-show="cat.link_count == 0" 
+                                class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-200 text-gray-500"
+                                title="无链接">
+                                0
+                            </span>
+                        </div>
                         <div class="flex gap-1.5">
                             <button @click="moveCategory(cat.id, -1)"
                                 class="p-1.5 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 border border-blue-200 transition"
