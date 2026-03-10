@@ -26,11 +26,46 @@
             </select>
         </div>
 
+        <!-- 批量操作工具栏 -->
+        <div x-show="selectedLinkIds.length > 0" 
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 transform -translate-y-2"
+             x-transition:enter-end="opacity-100 transform translate-y-0"
+             class="mb-4 p-3 bg-blue-50 border border-blue-100 rounded-lg flex flex-col md:flex-row items-center justify-between gap-3">
+            <div class="flex items-center gap-2">
+                <span class="text-sm font-medium text-blue-800">已选中 <span x-text="selectedLinkIds.length" class="font-bold"></span> 项</span>
+                <button @click="selectedLinkIds = []" class="text-xs text-blue-600 hover:underline">取消选择</button>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+                <div class="flex items-center gap-1 bg-white p-1 border rounded shadow-sm">
+                    <select x-model="batchTargetCategoryId" class="text-xs border-none focus:ring-0 py-1 pr-8">
+                        <option value="">转移至分类...</option>
+                        <template x-for="cat in categories" :key="cat.id">
+                            <option :value="cat.id" x-text="cat.name"></option>
+                        </template>
+                        <option value="0">未分类</option>
+                    </select>
+                    <button @click="batchMoveLinks" 
+                            :disabled="batchTargetCategoryId === ''"
+                            class="px-3 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 disabled:opacity-50 transition">
+                        确定转移
+                    </button>
+                </div>
+                <button @click="batchDeleteLinks" class="px-3 py-2 bg-red-500 text-white text-xs rounded hover:bg-red-600 transition flex items-center gap-1">
+                    <span>🗑️</span>
+                    <span>批量删除</span>
+                </button>
+            </div>
+        </div>
+
         <div class="overflow-x-auto">
             <table class="w-full text-left">
                 <thead>
                     <tr class="border-b">
-                        <th class="py-1.5 text-sm font-semibold text-gray-700 w-12">图标</th>
+                        <th class="py-2 w-8">
+                            <input type="checkbox" @click="toggleAllLinks" :checked="selectedLinkIds.length === paginatedLinks.length && paginatedLinks.length > 0" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                        </th>
+                        <th class="py-1.5 text-sm font-semibold text-gray-700 w-12 text-center">图标</th>
                         <th class="py-1.5 text-sm font-semibold text-gray-700">标题</th>
                         <th class="py-1.5 text-sm font-semibold text-gray-700">分类</th>
                         <th class="py-1.5 text-sm font-semibold text-gray-700">翻墙</th>
@@ -41,11 +76,16 @@
                 </thead>
                 <tbody>
                     <template x-for="link in paginatedLinks" :key="link.id">
-                        <tr class="border-b hover:bg-gray-50">
+                        <tr class="border-b hover:bg-gray-50 transition" :class="{'bg-blue-50/50': selectedLinkIds.includes(link.id)}">
+                            <td class="py-2">
+                                <input type="checkbox" :value="link.id" :checked="selectedLinkIds.includes(link.id)" @click="toggleLinkSelection(link.id)" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                            </td>
                             <td class="py-1.5">
-                                <img :src="link.icon || '/img/logo.svg'" :alt="link.title"
-                                    class="w-6 h-6 object-contain rounded shadow-sm border border-gray-100 bg-white"
-                                    onerror="this.src='/img/logo.svg'" referrerpolicy="no-referrer">
+                                <div class="flex justify-center">
+                                    <img :src="link.icon || '/img/logo.svg'" :alt="link.title"
+                                        class="w-6 h-6 object-contain rounded shadow-sm border border-gray-100 bg-white"
+                                        onerror="this.src='/img/logo.svg'" referrerpolicy="no-referrer">
+                                </div>
                             </td>
                             <td class="py-1.5 text-sm" x-text="link.title"></td>
                             <td class="py-1.5 text-sm" x-text="getCategoryName(link.category_id)"></td>

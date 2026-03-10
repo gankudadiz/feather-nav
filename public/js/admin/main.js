@@ -33,6 +33,8 @@ function adminInit() {
         currentPage: 1,
         perPage: 10,
         totalPages: 0,
+        selectedLinkIds: [], // 新增：存储选中的链接 ID
+        batchTargetCategoryId: '', // 新增：批量转移的目标分类 ID
 
         // 统计数据
         stats: {
@@ -618,6 +620,93 @@ function adminInit() {
                 return this.auditLogs;
             }
             return this.auditLogs.filter(log => log.action === this.selectedAuditAction);
+        },
+
+        // 批量操作相关方法
+        toggleAllLinks() {
+            if (this.selectedLinkIds.length === this.paginatedLinks.length) {
+                this.selectedLinkIds = [];
+            } else {
+                this.selectedLinkIds = this.paginatedLinks.map(link => link.id);
+            }
+        },
+
+        toggleLinkSelection(id) {
+            const index = this.selectedLinkIds.indexOf(id);
+            if (index > -1) {
+                this.selectedLinkIds.splice(index, 1);
+            } else {
+                this.selectedLinkIds.push(id);
+            }
+        },
+
+        async batchDeleteLinks() {
+            if (this.selectedLinkIds.length === 0) return;
+
+            const confirmed = await this.showConfirm(
+                '批量删除',
+                `确定要删除选中的 ${this.selectedLinkIds.length} 条链接吗？此操作无法撤销。`,
+                'danger'
+            );
+            if (!confirmed) return;
+
+            try {
+                const res = await fetch('/api/links/batch', {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': this.csrfToken
+                    },
+                    body: JSON.stringify({ ids: this.selectedLinkIds })
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                    this.showToast(data.message || '批量删除成功', 'success');
+                    this.selectedLinkIds = [];
+                    await this.loadData();
+                    this.filterLinks();
+                } else {
+                    this.showToast(data.error || '批量删除失败', 'error');
+                }
+            } catch (e) {
+                this.showToast('批量删除失败：' + e.message, 'error');
+            }
+        },
+
+        async batchMoveLinks() {
+            if (this.selectedLinkIds.length === 0) return;
+            if (this.batchTargetCategoryId === '') {
+                this.showToast('请选择目标分类', 'error');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/links/batch-move', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': this.csrfToken
+                    },
+                    body: JSON.stringify({
+                        ids: this.selectedLinkIds,
+                        category_id: this.batchTargetCategoryId
+                    })
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                    this.showToast(data.message || '批量移动成功', 'success');
+                    this.selectedLinkIds = [];
+                    this.batchTargetCategoryId = '';
+                    await this.loadData();
+                    this.filterLinks();
+                } else {
+                    this.showToast(data.error || '批量移动失败', 'error');
+                }
+            } catch (e) {
+                this.showToast('批量移动失败：' + e.message, 'error');
+            }
         }
     };
 }
