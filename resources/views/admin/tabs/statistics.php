@@ -47,36 +47,51 @@
                         <span class="text-yellow-600">⚠️</span>
                         <span class="text-sm font-medium text-yellow-800">未分类链接</span>
                     </div>
-                    <span class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800" x-text="stats.uncategorized_links || 0"></span>
+                    <span class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800"
+                        x-text="stats.uncategorized_links || 0"></span>
                 </div>
-                
-                <div @click="currentTab = 'links'; $nextTick(() => { linkSearchTerm = ''; filterNoIcon = true; filterLinks(); })" 
-                     class="flex items-center justify-between p-3 rounded-md bg-red-50 border border-red-100 cursor-pointer hover:bg-red-100 transition">
+
+                <div @click="currentTab = 'links'; $nextTick(() => { linkSearchTerm = ''; filterNoIcon = true; filterLinks(); })"
+                    class="flex items-center justify-between p-3 rounded-md bg-red-50 border border-red-100 cursor-pointer hover:bg-red-100 transition">
                     <div class="flex items-center space-x-3">
                         <span class="text-red-600">🖼️</span>
                         <span class="text-sm font-medium text-red-800">无图标链接</span>
                     </div>
                     <div class="flex items-center space-x-2">
-                        <span class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800" x-text="stats.no_icon_links || 0"></span>
+                        <span class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800"
+                            x-text="stats.no_icon_links || 0"></span>
                         <span class="text-xs text-red-600">点击查看</span>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- 快捷操作 -->
+        <!-- 快捷操作与导出 -->
         <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-            <h3 class="text-lg font-medium text-gray-900 mb-4">快捷操作</h3>
+            <h3 class="text-lg font-medium text-gray-900 mb-4">操作与管理</h3>
             <div class="grid grid-cols-2 gap-3">
-                <button @click="currentTab = 'addLink'" class="flex items-center justify-center space-x-2 p-3 rounded-md border border-gray-200 hover:bg-gray-50 transition text-sm">
+                <button @click="currentTab = 'addLink'"
+                    class="flex items-center justify-center space-x-2 p-3 rounded-md border border-gray-200 hover:bg-gray-50 transition text-sm">
                     <span>➕</span>
                     <span>添加链接</span>
                 </button>
-                <button @click="currentTab = 'categories'" class="flex items-center justify-center space-x-2 p-3 rounded-md border border-gray-200 hover:bg-gray-50 transition text-sm">
+                <button @click="currentTab = 'categories'"
+                    class="flex items-center justify-center space-x-2 p-3 rounded-md border border-gray-200 hover:bg-gray-50 transition text-sm">
                     <span>📁</span>
                     <span>管理分类</span>
                 </button>
-                <button @click="loadStatistics()" class="flex items-center justify-center space-x-2 p-3 rounded-md border border-gray-200 hover:bg-gray-50 transition text-sm col-span-2">
+                <button @click="exportData('json')"
+                    class="flex items-center justify-center space-x-2 p-3 rounded-md border border-blue-200 hover:bg-blue-50 transition text-sm text-blue-700">
+                    <span>📦</span>
+                    <span>导出 JSON</span>
+                </button>
+                <button @click="exportData('html')"
+                    class="flex items-center justify-center space-x-2 p-3 rounded-md border border-purple-200 hover:bg-purple-50 transition text-sm text-purple-700">
+                    <span>🔖</span>
+                    <span>导出书签</span>
+                </button>
+                <button @click="loadStatistics()"
+                    class="flex items-center justify-center space-x-2 p-3 rounded-md border border-gray-200 hover:bg-gray-50 transition text-sm col-span-2">
                     <span>🔄</span>
                     <span>刷新统计数据</span>
                 </button>

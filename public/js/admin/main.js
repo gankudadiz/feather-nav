@@ -707,6 +707,52 @@ function adminInit() {
             } catch (e) {
                 this.showToast('批量移动失败：' + e.message, 'error');
             }
+        },
+
+        // 导出数据
+        async exportData(type) {
+            try {
+                this.showToast('正在生成导出文件...', 'success');
+                const url = type === 'json' ? '/api/export/json' : '/api/export/html';
+                
+                const res = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                if (!res.ok) {
+                    throw new Error(`导出请求失败，状态码: ${res.status}`);
+                }
+
+                let filename = type === 'json' ? 'feather_nav_export.json' : 'bookmarks.html';
+                const disposition = res.headers.get('Content-Disposition');
+                if (disposition && disposition.includes('attachment')) {
+                    const filenameMatch = disposition.match(/filename="?([^"]+)"?/);
+                    if (filenameMatch && filenameMatch.length === 2) {
+                        filename = filenameMatch[1];
+                    }
+                }
+
+                const blob = await res.blob();
+                const downloadUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = downloadUrl;
+                a.download = filename;
+                
+                document.body.appendChild(a);
+                a.click();
+                
+                window.URL.revokeObjectURL(downloadUrl);
+                a.remove();
+                
+                this.showToast('数据导出成功！', 'success');
+            } catch (e) {
+                console.error('导出失败:', e);
+                this.showToast('导出失败：' + e.message, 'error');
+            }
         }
     };
 }
