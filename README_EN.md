@@ -14,6 +14,7 @@ A lightweight personal navigation website built with Flight PHP + Tailwind CSS +
 - ✅ **Link Management**: Support for VPN markers, auto-fetching/manual icon upload
 - ✅ **Search Functionality**: Quickly find links, filter by status like "No Icon"
 - ✅ **Data Statistics**: Admin dashboard with real-time stats for links, categories, and exceptions
+- ✅ **Import/Export**: Native JSON backup and browser HTML bookmark import with preview and selective import
 - ✅ **Audit Logs**: Records key admin operations (Login, CRUD, etc.) for traceability
 - ✅ **UX Optimization**: Hash-based routing for browser back/forward support (SPA-like experience)
 

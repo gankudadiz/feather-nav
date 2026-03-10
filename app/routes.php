@@ -10,6 +10,7 @@ use App\Controllers\UploadController;
 use App\Controllers\AuditLogController;
 use App\Controllers\DashboardController;
 use App\Controllers\ExportController;
+use App\Controllers\ImportController;
 
 // 通用认证函数
 function requireAuth()
@@ -79,6 +80,18 @@ Flight::group('/api', function () {
         requireAuth();
         $e = new ExportController();
         $e->exportHtml();
+    });
+    Flight::route('POST /import/upload', function () {
+        requireAuth();
+        validateCsrf();
+        $i = new ImportController();
+        $i->uploadForPreview();
+    });
+    Flight::route('POST /import/confirm', function () {
+        requireAuth();
+        validateCsrf();
+        $i = new ImportController();
+        $i->confirmImport();
     });
 
     // 分类 - 管理

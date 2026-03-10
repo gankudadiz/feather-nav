@@ -36,6 +36,15 @@ function adminInit() {
         selectedLinkIds: [], // 新增：存储选中的链接 ID
         batchTargetCategoryId: '', // 新增：批量转移的目标分类 ID
 
+        // 导入状态
+        importStrategy: 'skip',
+        isImporting: false,
+        isParsing: false,
+        showImportPreviewModal: false,
+        importPreviewData: [],
+        importTotalLinks: 0,
+        importSearchTerm: '',
+
         // 统计数据
         stats: {
             total_links: 0,
@@ -752,6 +761,154 @@ function adminInit() {
             } catch (e) {
                 console.error('导出失败:', e);
                 this.showToast('导出失败：' + e.message, 'error');
+            }
+        },
+
+        // 读取过滤后的预览数据
+        get filteredImportPreview() {
+            if (!this.importSearchTerm) return this.importPreviewData;
+            const term = this.importSearchTerm.toLowerCase();
+            return this.importPreviewData.map(cat => ({
+                ...cat,
+                links: cat.links.filter(l => l.title.toLowerCase().includes(term) || l.url.toLowerCase().includes(term))
+            })).filter(cat => cat.links.length > 0);
+        },
+
+        // 获取当前勾选的数量
+        get selectedImportCount() {
+            let count = 0;
+            this.importPreviewData.forEach(cat => {
+                count += cat.links.filter(l => l._selected).length;
+            });
+            return count;
+        },
+
+        // 切换全部分类的选定状态
+        toggleImportCategory(cat) {
+            const newState = !cat._allSelected;
+            cat._allSelected = newState;
+            cat.links.forEach(l => l._selected = newState);
+        },
+
+        // 检查分类的子项选定状态
+        checkImportCategoryState(cat) {
+            cat._allSelected = cat.links.every(l => l._selected);
+        },
+
+        // 阶段A：解析导入文件预览
+        async parseImportFile() {
+            const fileInput = this.$refs.importFile;
+            if (!fileInput.files || fileInput.files.length === 0) {
+                this.showToast('请先选择要导入的 JSON 或 HTML 文件', 'error');
+                return;
+            }
+
+            const file = fileInput.files[0];
+            if (file.size / 1024 / 1024 > 10) {
+                this.showToast('文件大小超过 10MB 限制', 'error');
+                return;
+            }
+
+            this.isParsing = true;
+            this.showToast('正在解析文件，请稍候...', 'success');
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const res = await fetch('/api/import/upload', {
+                    method: 'POST',
+                    headers: { 'X-CSRF-Token': this.csrfToken },
+                    body: formData
+                });
+                const data = await res.json();
+                
+                if (res.ok && data.success) {
+                    this.importPreviewData = data.data.map(cat => ({
+                        ...cat,
+                        _allSelected: true,
+                        links: cat.links.map(l => ({ ...l, _selected: true }))
+                    }));
+                    this.importTotalLinks = data.total_links;
+                    this.importSearchTerm = '';
+                    this.showImportPreviewModal = true;
+                } else {
+                    this.showToast(data.error || '解析失败', 'error');
+                }
+            } catch (e) {
+                console.error('Parse failed:', e);
+                this.showToast('解析失败：' + e.message, 'error');
+            } finally {
+                this.isParsing = false;
+            }
+        },
+
+        // 阶段B：确认并真实导入选中的链接
+        async confirmImport() {
+            const selectedLinks = [];
+            this.importPreviewData.forEach(cat => {
+                cat.links.forEach(l => {
+                    if (l._selected) {
+                        selectedLinks.push({
+                            category: cat.category_name,
+                            title: l.title,
+                            url: l.url,
+                            description: l.description,
+                            need_vpn: l.need_vpn,
+                            icon: l.icon
+                        });
+                    }
+                });
+            });
+
+            if (selectedLinks.length === 0) {
+                this.showToast('未选择任何链接进行导入', 'warning');
+                return;
+            }
+
+            const confirmed = await this.showConfirm('执行数据导入', `即将导入 ${selectedLinks.length} 条选中的链接。\n策略：[${this.importStrategy === 'skip' ? '重复跳过' : '重复覆盖'}]。\n是否确认？`, 'warning');
+            if (!confirmed) return;
+
+            this.isImporting = true;
+            this.showToast('数据导入中，请耐心等待...', 'success');
+
+            try {
+                const res = await fetch('/api/import/confirm', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': this.csrfToken 
+                    },
+                    body: JSON.stringify({
+                        strategy: this.importStrategy,
+                        links: selectedLinks
+                    })
+                });
+
+                const data = await res.json();
+                
+                if (res.ok) {
+                    this.$refs.importFile.value = '';
+                    this.showImportPreviewModal = false;
+                    const s = data.stats;
+                    
+                    await this.showConfirm(
+                        '✨ 数据导入完成', 
+                        `本次处理结果（共提交 ${s.total} 条链接):\n\n- 新增入库: ${s.inserted} 条\n- 覆盖更新: ${s.updated} 条\n- 重复跳过: ${s.skipped} 条\n- 发生异常: ${s.failed} 条\n\n自动创建了 ${s.new_categories} 个缺失的新分类。`, 
+                        'success'
+                    );
+                    
+                    await this.loadData();
+                    await this.loadStatistics();
+                    this.filterLinks();
+                } else {
+                    this.showToast(data.error || '导入失败', 'error');
+                }
+            } catch (e) {
+                console.error('Import Error:', e);
+                this.showToast('导入失败：' + e.message, 'error');
+            } finally {
+                this.isImporting = false;
             }
         }
     };
