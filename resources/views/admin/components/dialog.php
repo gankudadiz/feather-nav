@@ -35,7 +35,8 @@
                 </div>
                 <div class="flex-1 pt-1">
                     <h3 class="text-base font-semibold text-gray-900" x-text="dialog.title"></h3>
-                    <p class="mt-2 text-sm text-gray-500 leading-relaxed" x-text="dialog.message"></p>
+                    <p class="mt-2 text-sm text-gray-500 leading-relaxed whitespace-pre-line" x-text="dialog.message">
+                    </p>
                 </div>
             </div>
             <!-- 操作按钮 -->

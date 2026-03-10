@@ -866,7 +866,11 @@ function adminInit() {
                 return;
             }
 
-            const confirmed = await this.showConfirm('执行数据导入', `即将导入 ${selectedLinks.length} 条选中的链接。\n策略：[${this.importStrategy === 'skip' ? '重复跳过' : '重复覆盖'}]。\n是否确认？`, 'warning');
+            const confirmed = await this.showConfirm(
+                '执行数据导入', 
+                `即将导入 ${selectedLinks.length} 条选中的链接。\n策略：[${this.importStrategy === 'skip' ? '重复跳过' : '重复覆盖'}]。\n\n是否确认执行导入？`, 
+                'warning'
+            );
             if (!confirmed) return;
 
             this.isImporting = true;
@@ -892,9 +896,21 @@ function adminInit() {
                     this.showImportPreviewModal = false;
                     const s = data.stats;
                     
+                    // 偷偷发起一个发后不理的请求抓取图标，绝不阻塞用户 UI
+                    if (data.urls_to_fetch && data.urls_to_fetch.length > 0) {
+                        fetch('/api/import/fetch-favicons', {
+                            method: 'POST',
+                            headers: { 
+                                'Content-Type': 'application/json',
+                                'X-CSRF-Token': this.csrfToken 
+                            },
+                            body: JSON.stringify({ urls: data.urls_to_fetch })
+                        }).catch(() => {}); // 即使报错也静默忽略
+                    }
+
                     await this.showConfirm(
-                        '✨ 数据导入完成', 
-                        `本次处理结果（共提交 ${s.total} 条链接):\n\n- 新增入库: ${s.inserted} 条\n- 覆盖更新: ${s.updated} 条\n- 重复跳过: ${s.skipped} 条\n- 发生异常: ${s.failed} 条\n\n自动创建了 ${s.new_categories} 个缺失的新分类。`, 
+                        '✨ ' + (data.message || '数据导入完成'), 
+                        `本次处理结果（共提交 ${s.total} 条链接）：\n\n- 新增入库：${s.inserted} 条\n- 覆盖更新：${s.updated} 条\n- 重复跳过：${s.skipped} 条\n- 发生异常：${s.failed} 条\n\n系统已自动创建了 ${s.new_categories} 个缺失的新分类。\n系统正在后台尝试补全图标，您可以先进行其他操作。`, 
                         'success'
                     );
                     

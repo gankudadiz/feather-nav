@@ -93,6 +93,12 @@ Flight::group('/api', function () {
         $i = new ImportController();
         $i->confirmImport();
     });
+    Flight::route('POST /import/fetch-favicons', function () {
+        requireAuth();
+        validateCsrf();
+        $i = new ImportController();
+        $i->fetchFavicons();
+    });
 
     // 分类 - 管理
     Flight::route('POST /categories', function () {

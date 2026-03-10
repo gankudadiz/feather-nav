@@ -82,7 +82,7 @@ class ImportController
      */
     public function confirmImport(): void
     {
-        set_time_limit(300);
+        set_time_limit(600); // 增加时间限制给后台任务
         ini_set('memory_limit', '256M');
 
         $body = json_decode(Flight::request()->getBody(), true) ?? [];
@@ -95,18 +95,79 @@ class ImportController
         }
 
         try {
-            // 执行入库
-            $stats = $this->executeImport($linksToImport, $strategy);
+            // 执行入库，并获取需要抓取图标的 URL 列表
+            $result = $this->executeImport($linksToImport, $strategy);
+            $stats = $result['stats'];
+            $urlsToFetch = $result['urls_to_fetch'];
 
             LogHelper::log('import_data', "通过预览确认导入数据：新增 {$stats['inserted']} 条，覆盖 {$stats['updated']} 条，新建分类 {$stats['new_categories']} 个");
 
+            // 构造响应数据，直接使用标准的 Flight::json 返回给前端，确保瞬间响应
             Flight::json([
                 'success' => true,
                 'message' => '导入完成',
-                'stats' => $stats
+                'stats' => $stats,
+                'urls_to_fetch' => $urlsToFetch
             ]);
-        } catch (Exception $e) {
+
+        } catch (\Throwable $e) {
             Flight::json(['error' => '导入入库失败: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * 前端触发的纯异步后台抓取接口（发后不理）
+     */
+    public function fetchFavicons(): void
+    {
+        set_time_limit(600); // 10分钟长时任务
+        ignore_user_abort(true); // 重点：允许客户端挂断（不等待/跳转页面），服务器依然继续抓取
+
+        $body = json_decode(Flight::request()->getBody(), true) ?? [];
+        $urls = $body['urls'] ?? [];
+
+        if (empty($urls) || !is_array($urls)) {
+            Flight::json(['success' => true]);
+            return;
+        }
+
+        // 如果环境支持，提前发送成功响应并告知 Web Server 关掉客户端连接
+        if (function_exists('fastcgi_finish_request')) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true]);
+            fastcgi_finish_request();
+        }
+
+        // 开始队列排队抓取
+        $this->backgroundFetchFavicons($urls);
+
+        // 如果环境（如内置 php -S）不支持提前收尾，则在跑完所有循环后正常响应（反正前端没有写 await，不会卡死 UI）
+        if (!function_exists('fastcgi_finish_request')) {
+            Flight::json(['success' => true]);
+        }
+    }
+
+    /**
+     * 后台静默抓取图标并更新数据库
+     */
+    private function backgroundFetchFavicons(array $urls): void
+    {
+        $db = Flight::db()->getConnection();
+        $updateStmt = $db->prepare('UPDATE links SET icon = ? WHERE url = ? AND (icon IS NULL OR icon = \'\')');
+
+        foreach ($urls as $url) {
+            try {
+                // 抓取并保存
+                $iconPath = FaviconHelper::fetchAndSave($url);
+                if ($iconPath) {
+                    $updateStmt->execute([$iconPath, $url]);
+                }
+                // 稍微休息一下，避免对目标网站或本地 CPU 造成太大压力
+                usleep(100000); // 100ms
+            } catch (\Throwable $e) {
+                // 忽略单个抓取失败，不管是 Error 还是 Exception 都不中断循环
+                continue;
+            }
         }
     }
 
@@ -232,6 +293,7 @@ class ImportController
             'new_categories' => 0,
             'failed' => 0
         ];
+        $urlsToFetch = [];
 
         // 缓存分类映射 (名称 => ID)
         $categoryCache = [];
@@ -263,12 +325,10 @@ class ImportController
                 }
 
                 // 数据长度清洗，防止 SQLSTATE[22001] 报错
-                // title 限制 100, url 限制 500, description 限制 255
                 $cleanTitle = mb_substr($data['title'], 0, 100);
                 $cleanUrl = mb_substr($data['url'], 0, 500);
                 $cleanDesc = mb_substr($data['description'] ?? '', 0, 255);
 
-                // icon 限制 500。如果是超长的 Base64 直接放弃，保留为 null 触发后续重刷
                 $icon = $data['icon'];
                 if ($icon && strlen($icon) > 500) {
                     $icon = null;
@@ -276,7 +336,7 @@ class ImportController
 
                 $catName = $data['category'] === '未分类' || empty($data['category']) ? null : $data['category'];
                 if ($catName) {
-                    $catName = mb_substr($catName, 0, 50); // 分类名通常也有限制
+                    $catName = mb_substr($catName, 0, 50);
                 }
                 $categoryId = null;
 
@@ -292,11 +352,10 @@ class ImportController
                     }
                 }
 
-                // 处理图标逻辑：如果是本地相对路径且文件不存在，当做无图标强制重置
                 if ($icon && str_starts_with($icon, '/uploads/')) {
                     $localPath = __DIR__ . '/../../public' . $icon;
                     if (!file_exists($localPath)) {
-                        $icon = null; // 本地不存在该相对路径的图片，丢弃
+                        $icon = null;
                     }
                 }
 
@@ -315,8 +374,12 @@ class ImportController
                             $cleanUrl
                         ]);
                         $stats['updated']++;
+
+                        // 如果更新后依然没有图标，加入抓取队列
+                        if (empty($icon)) {
+                            $urlsToFetch[] = $cleanUrl;
+                        }
                     } else {
-                        // 策略为 skip
                         $stats['skipped']++;
                     }
                 } else {
@@ -331,6 +394,11 @@ class ImportController
                         0
                     ]);
                     $stats['inserted']++;
+
+                    // 如果插入时没有图标，加入抓取队列
+                    if (empty($icon)) {
+                        $urlsToFetch[] = $cleanUrl;
+                    }
                 }
             }
 
@@ -340,6 +408,9 @@ class ImportController
             throw $e;
         }
 
-        return $stats;
+        return [
+            'stats' => $stats,
+            'urls_to_fetch' => array_unique($urlsToFetch)
+        ];
     }
 }
