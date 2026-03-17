@@ -107,7 +107,7 @@
                     class="block w-full lg:flex-1 text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer border border-gray-200 rounded-md">
 
                 <select x-model="importStrategy"
-                    class="w-full lg:w-48 border-gray-300 rounded-md shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 py-2 px-3 text-sm bg-white">
+                    class="w-full lg:w-48 border border-gray-200 rounded-md focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 py-2 px-3 text-sm bg-white hover:bg-gray-50 transition">
                     <option value="skip">碰到相同网址：跳过</option>
                     <option value="update">碰到相同网址：覆盖</option>
                 </select>
