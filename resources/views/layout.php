@@ -7,6 +7,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= $title ?? '洲哥导航' ?></title>
+    <meta name="keywords" content="<?= htmlspecialchars(\App\Helpers\SettingHelper::get('site_keywords', '导航,工具,极简')) ?>">
 
     <!-- 网站图标 (Favicon) -->
     <link rel="icon" type="image/svg+xml" href="/img/logo.svg">
@@ -39,10 +40,13 @@
                     <img src="/img/logo.svg" alt="网站图标" class="w-8 h-8">
                     <div class="flex items-baseline space-x-3">
                         <!-- 网站标题 -->
-                        <h1 class="text-xl font-bold text-gray-800">洲哥导航</h1>
-                        <!-- 广告语 - 突出技术栈和极简风格 -->
-                        <span class="text-sm text-gray-500 font-medium tracking-wide">极简高效 • Flight PHP + Alpine.js
-                            驱动</span>
+                        <h1 class="text-xl font-bold text-gray-800">
+                            <?= htmlspecialchars(\App\Helpers\SettingHelper::get('site_title', '洲哥导航')) ?>
+                        </h1>
+                        <!-- 广告语 -->
+                        <span class="text-sm text-gray-500 font-medium tracking-wide">
+                            <?= htmlspecialchars(\App\Helpers\SettingHelper::get('site_subtitle', '极简高效 • Flight PHP + Alpine.js 驱动')) ?>
+                        </span>
                     </div>
                 </div>
 

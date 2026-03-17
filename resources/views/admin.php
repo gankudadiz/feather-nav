@@ -34,6 +34,11 @@
                 class="whitespace-nowrap py-3 px-1 border-b-2 text-sm transition">
                 🛡️ 审计日志
             </button>
+            <button @click="currentTab = 'settings'"
+                :class="currentTab === 'settings' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                class="whitespace-nowrap py-3 px-1 border-b-2 text-sm transition">
+                ⚙️ 系统设置
+            </button>
         </nav>
     </div>
 
@@ -43,6 +48,7 @@
     <div x-show="currentTab === 'addLink'"><?php include __DIR__ . '/admin/tabs/link_add.php'; ?></div>
     <div x-show="currentTab === 'categories'"><?php include __DIR__ . '/admin/tabs/category_list.php'; ?></div>
     <div x-show="currentTab === 'auditLogs'"><?php include __DIR__ . '/admin/tabs/audit_log.php'; ?></div>
+    <div x-show="currentTab === 'settings'"><?php include __DIR__ . '/admin/tabs/settings.php'; ?></div>
 
     <!-- 引入模态框 -->
     <?php include __DIR__ . '/admin/modals/edit_link.php'; ?>

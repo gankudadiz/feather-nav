@@ -11,6 +11,7 @@ use App\Controllers\AuditLogController;
 use App\Controllers\DashboardController;
 use App\Controllers\ExportController;
 use App\Controllers\ImportController;
+use App\Controllers\SettingsController;
 
 // 通用认证函数
 function requireAuth()
@@ -175,6 +176,19 @@ Flight::group('/api', function () {
         requireAuth();
         $a = new AuditLogController();
         $a->index();
+    });
+
+    // 系统设置 - 管理
+    Flight::route('GET /settings', function () {
+        requireAuth();
+        $s = new SettingsController();
+        $s->index();
+    });
+    Flight::route('PUT /settings', function () {
+        requireAuth();
+        validateCsrf();
+        $s = new SettingsController();
+        $s->update();
     });
 
     // 文件上传

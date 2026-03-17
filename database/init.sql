@@ -49,6 +49,17 @@ CREATE TABLE IF NOT EXISTS `audit_logs` (
     INDEX `idx_action` (`action`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 系统全局设置表
+CREATE TABLE IF NOT EXISTS `settings` (
+    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `setting_key` VARCHAR(50) NOT NULL UNIQUE COMMENT '配置键名',
+    `setting_value` TEXT COMMENT '配置值',
+    `setting_name` VARCHAR(100) NOT NULL COMMENT '配置显示名称(中文)',
+    `setting_type` VARCHAR(20) NOT NULL DEFAULT 'text' COMMENT '输入类型 (text, boolean, number, textarea)',
+    `updated_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX `idx_key` (`setting_key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='系统全局设置表';
+
 -- 插入示例数据
 INSERT IGNORE INTO `categories` (`id`, `name`, `sort_order`) VALUES
 (1, '常用工具', 1),
@@ -64,3 +75,12 @@ INSERT IGNORE INTO `links` (`category_id`, `title`, `url`, `description`, `need_
 (2, 'Stack Overflow', 'https://stackoverflow.com', '程序员问答社区', 1, 3),
 (3, '慕课网', 'https://www.imooc.com', 'IT 技能学习平台', 0, 1),
 (3, 'YouTube', 'https://www.youtube.com', '视频分享平台', 1, 2);
+
+-- 插入初始系统设置
+INSERT IGNORE INTO `settings` (`setting_key`, `setting_value`, `setting_name`, `setting_type`) VALUES
+('site_title', '我的个人导航', '网站主标题', 'text'),
+('site_subtitle', '简约而不简单', '网站副标题/一言', 'text'),
+('site_keywords', '个人导航,导航站,自定义效率工具', 'SEO关键词', 'text'),
+('is_public', '1', '首页公开访问', 'boolean'),
+('links_per_page', '12', '首页每页显示链接数', 'number');
+

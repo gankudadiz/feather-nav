@@ -1,4 +1,4 @@
-<?php $title = '我的导航'; ?>
+<?php // 网站标题现已由 HomeController 动态注入 ?>
 
 <div class="container mx-auto px-4 py-8" x-data="navigation()">
     <!-- 搜索和筛选栏 -->

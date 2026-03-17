@@ -3,6 +3,7 @@ function adminInit() {
         csrfToken: '',
         categories: [],
         links: [],
+        settings: [],
         auditLogs: [],
         selectedAuditAction: '',
         newCategory: '',
@@ -107,7 +108,7 @@ function adminInit() {
 
         handleHashRoute() {
             const hash = window.location.hash.replace('#', '');
-            const validTabs = ['statistics', 'links', 'addLink', 'categories', 'auditLogs'];
+            const validTabs = ['statistics', 'links', 'addLink', 'categories', 'auditLogs', 'settings'];
             if (hash && validTabs.includes(hash)) {
                 this.currentTab = hash;
             } else if (!hash) {
@@ -124,6 +125,9 @@ function adminInit() {
                     break;
                 case 'auditLogs':
                     await this.loadAuditLogs();
+                    break;
+                case 'settings':
+                    await this.loadSettings();
                     break;
                 case 'links':
                 case 'categories':
@@ -925,6 +929,50 @@ function adminInit() {
                 this.showToast('导入失败：' + e.message, 'error');
             } finally {
                 this.isImporting = false;
+            }
+        },
+
+        async loadSettings() {
+            try {
+                const res = await fetch('/api/settings');
+                if (res.ok) {
+                    this.settings = await res.json();
+                } else {
+                    this.showToast('加载设置项失败', 'error');
+                }
+            } catch (e) {
+                console.error('加载设置项出错:', e);
+            }
+        },
+
+        async saveSettings() {
+            // 将数组转回 Key-Value 对象提交更新
+            const payload = {};
+            this.settings.forEach(s => {
+                payload[s.setting_key] = s.setting_value;
+            });
+
+            try {
+                const res = await fetch('/api/settings', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': this.csrfToken
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                    this.showToast(data.message || '设置已成功保存', 'success');
+                    // 重新加载以确保一致性
+                    await this.loadSettings();
+                } else {
+                    this.showToast(data.error || '保存失败', 'error');
+                }
+            } catch (e) {
+                console.error('保存设置项出错:', e);
+                this.showToast('保存失败，请检查网络后重试', 'error');
             }
         }
     };
