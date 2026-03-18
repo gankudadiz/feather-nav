@@ -95,7 +95,7 @@ class LinkController
     public function index(): void
     {
         $db = Flight::db()->getConnection();
-        $stmt = $db->query('SELECT id, category_id, title, url, description, need_vpn, icon, sort_order, created_at FROM links ORDER BY sort_order ASC');
+        $stmt = $db->query('SELECT id, category_id, title, url, description, need_vpn, icon, sort_order, click_count, last_status, last_check_at, created_at FROM links ORDER BY sort_order ASC');
         $links = $stmt->fetchAll();
 
         Flight::json($links);
@@ -329,5 +329,110 @@ class LinkController
         LogHelper::log('link_refresh_icon', "刷新图标: {$link['title']} (ID: $id)");
 
         Flight::json(['message' => '图标更新成功', 'icon' => $icon]);
+    }
+
+    public function recordClick(string $id): void
+    {
+        if (!is_numeric($id)) {
+            Flight::json(['error' => 'Invalid ID'], 400);
+            return;
+        }
+
+        $db = Flight::db()->getConnection();
+        $stmt = $db->prepare('UPDATE links SET click_count = click_count + 1 WHERE id = ?');
+        $stmt->execute([$id]);
+
+        Flight::json(['success' => true]);
+    }
+
+    public function checkLinkStatus(string $id): void
+    {
+        $db = Flight::db()->getConnection();
+        $stmt = $db->prepare('SELECT id, url FROM links WHERE id = ?');
+        $stmt->execute([$id]);
+        $link = $stmt->fetch();
+
+        if (!$link) {
+            Flight::json(['error' => 'Link not found'], 404);
+            return;
+        }
+
+        $status = $this->fetchUrlStatus($link['url']);
+        
+        $updateStmt = $db->prepare('UPDATE links SET last_status = ?, last_check_at = CURRENT_TIMESTAMP WHERE id = ?');
+        $updateStmt->execute([$status, $id]);
+
+        Flight::json([
+            'id' => $id,
+            'url' => $link['url'],
+            'status' => $status,
+            'checked_at' => date('Y-m-d H:i:s')
+        ]);
+    }
+
+    public function checkAllLinksStatus(): void
+    {
+        // 获取前端传来的参数
+        $input = Flight::request()->data;
+        $includeVpn = isset($input->include_vpn) && $input->include_vpn == true;
+
+        // 设置较长的脚本执行时间
+        set_time_limit(600);
+        
+        $db = Flight::db()->getConnection();
+        
+        // 根据参数决定是否包含 VPN 链接
+        $sql = 'SELECT id, url FROM links';
+        if (!$includeVpn) {
+            $sql .= ' WHERE need_vpn = 0';
+        }
+        
+        $links = $db->query($sql)->fetchAll();
+        
+        $results = [];
+        $updateStmt = $db->prepare('UPDATE links SET last_status = ?, last_check_at = CURRENT_TIMESTAMP WHERE id = ?');
+
+        foreach ($links as $link) {
+            $status = $this->fetchUrlStatus($link['url']);
+            $updateStmt->execute([$status, $link['id']]);
+            $results[] = [
+                'id' => $link['id'],
+                'status' => $status
+            ];
+        }
+
+        Flight::json([
+            'message' => 'Checked ' . count($links) . ' links' . ($includeVpn ? ' (including VPN)' : ' (skipped VPN)'),
+            'count' => count($links),
+            'results' => $results
+        ]);
+    }
+
+    /**
+     * 使用 cURL 获取 URL 状态码
+     */
+    private function fetchUrlStatus(string $url): int
+    {
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_MAXREDIRS, 3);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 10); // 10秒超时
+        curl_setopt($ch, CURLOPT_NOBODY, true); // 仅获取头部，不下载内容
+        curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // 忽略 SSL 证书错误
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+
+        curl_exec($ch);
+        $status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        
+        if (curl_errno($ch)) {
+            // 如果 cURL 出错（如 DNS 失败，连接超时），返回 0
+            $status = 0;
+        }
+        
+        curl_close($ch);
+        return $status;
     }
 }

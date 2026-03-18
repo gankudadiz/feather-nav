@@ -1,5 +1,5 @@
 <div class="space-y-6" x-init="loadStatistics()">
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         <!-- 总链接数 -->
         <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100 flex items-center space-x-4">
             <div class="p-3 bg-blue-50 rounded-full">
@@ -8,6 +8,17 @@
             <div>
                 <p class="text-sm font-medium text-gray-500">总链接数</p>
                 <p class="text-2xl font-bold text-gray-900" x-text="stats.total_links || 0"></p>
+            </div>
+        </div>
+
+        <!-- 总点击量 -->
+        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100 flex items-center space-x-4">
+            <div class="p-3 bg-orange-50 rounded-full">
+                <span class="text-2xl">🔥</span>
+            </div>
+            <div>
+                <p class="text-sm font-medium text-gray-500">总点击量</p>
+                <p class="text-2xl font-bold text-gray-900" x-text="stats.total_clicks || 0"></p>
             </div>
         </div>
 
@@ -22,6 +33,18 @@
                     <p class="text-2xl font-bold text-gray-900" x-text="stats.vpn_links || 0"></p>
                     <p class="text-sm text-gray-500" x-text="`(${stats.vpn_percentage || 0}%)`"></p>
                 </div>
+            </div>
+        </div>
+
+        <!-- 死链数 -->
+        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100 flex items-center space-x-4 cursor-pointer hover:bg-red-50 transition"
+             @click="currentTab = 'links'; $nextTick(() => { linkSearchTerm = ''; filterNoIcon = false; filterLinks(); })">
+            <div class="p-3 bg-red-50 rounded-full">
+                <span class="text-2xl">❌</span>
+            </div>
+            <div>
+                <p class="text-sm font-medium text-gray-500">疑似死链</p>
+                <p class="text-2xl font-bold text-red-600" x-text="stats.dead_links || 0"></p>
             </div>
         </div>
 

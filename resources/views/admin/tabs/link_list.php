@@ -24,6 +24,11 @@
                     <option :value="cat.id" x-text="cat.name"></option>
                 </template>
             </select>
+            <button @click="checkAllLinks()" 
+                class="px-4 py-2 bg-indigo-50 border border-indigo-200 text-indigo-700 rounded hover:bg-indigo-100 transition flex items-center gap-2">
+                <span>🔍</span>
+                <span>扫码死链</span>
+            </button>
         </div>
 
         <!-- 批量操作工具栏 -->
@@ -68,7 +73,8 @@
                         <th class="py-1.5 text-sm font-semibold text-gray-700 w-12 text-center">图标</th>
                         <th class="py-1.5 text-sm font-semibold text-gray-700">标题</th>
                         <th class="py-1.5 text-sm font-semibold text-gray-700">分类</th>
-                        <th class="py-1.5 text-sm font-semibold text-gray-700">翻墙</th>
+                        <th class="py-1.5 text-sm font-semibold text-gray-700">状态</th>
+                        <th class="py-1.5 text-sm font-semibold text-gray-700 w-16 text-center">点击</th>
                         <th class="py-1.5 text-sm font-semibold text-gray-700">URL</th>
                         <th x-show="selectedCategory !== ''" class="py-1.5 text-sm font-semibold text-gray-700 w-20 text-center">排序</th>
                         <th class="py-1.5 text-sm font-semibold text-gray-700">操作</th>
@@ -90,15 +96,26 @@
                             <td class="py-1.5 text-sm" x-text="link.title"></td>
                             <td class="py-1.5 text-sm" x-text="getCategoryName(link.category_id)"></td>
                             <td class="py-1.5">
-                                <span x-show="link.need_vpn == 1"
-                                    class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                    🛡️ 需要翻墙
-                                </span>
-                                <span x-show="link.need_vpn == 0"
-                                    class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                    🛡️ 不需要
-                                </span>
+                                <!-- 组合式状态展示 -->
+                                <div class="flex items-center gap-1.5">
+                                    <!-- 死链检测状态 -->
+                                    <template x-if="link.last_status">
+                                        <span class="inline-flex items-center" :title="'最后检测状态: ' + link.last_status + ' (时间: ' + link.last_check_at + ')'">
+                                            <span x-show="link.last_status >= 200 && link.last_status < 400" class="w-2.5 h-2.5 rounded-full bg-green-500 shadow-sm shadow-green-200"></span>
+                                            <span x-show="link.last_status >= 400" class="w-2.5 h-2.5 rounded-full bg-red-500 shadow-sm shadow-red-200"></span>
+                                            <span x-show="link.last_status == 0" class="w-2.5 h-2.5 rounded-full bg-gray-400"></span>
+                                        </span>
+                                    </template>
+                                    <template x-if="!link.last_status">
+                                        <span class="w-2.5 h-2.5 rounded-full bg-gray-200" title="尚未检测"></span>
+                                    </template>
+
+                                    <!-- 翻墙标识 -->
+                                    <span x-show="link.need_vpn == 1" class="text-xs px-1.5 py-0.5 rounded bg-red-50 text-red-600 border border-red-100 font-medium">VPN</span>
+                                    <span x-show="link.need_vpn == 0" class="text-xs px-1.5 py-0.5 rounded bg-green-50 text-green-600 border border-green-100 font-medium">直连</span>
+                                </div>
                             </td>
+                            <td class="py-1.5 text-sm text-center font-mono text-gray-500" x-text="link.click_count || 0"></td>
                             <td class="py-1.5">
                                 <a :href="link.url" target="_blank"
                                     class="text-blue-500 hover:underline truncate block max-w-xs text-sm"
@@ -124,6 +141,12 @@
                             </td>
                             <td class="py-1.5">
                                 <div class="flex gap-1.5">
+                                    <button @click="checkLink(link)"
+                                        class="px-2 py-1 text-indigo-700 bg-indigo-50 rounded hover:bg-indigo-100 border border-indigo-200 transition flex items-center gap-1 text-xs"
+                                        title="检测链接可用性">
+                                        <span>🔍</span>
+                                        <span>检测</span>
+                                    </button>
                                     <button @click="openEditLinkModal(link)"
                                         class="px-2 py-1 text-yellow-700 bg-yellow-50 rounded hover:bg-yellow-100 border border-yellow-200 transition flex items-center gap-1 text-xs">
                                         <span>✏️</span>

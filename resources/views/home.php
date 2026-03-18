@@ -48,6 +48,7 @@
                     <a
                         :href="link.url"
                         target="_blank"
+                        @click="recordClick(link.id)"
                         class="relative group flex flex-col items-center p-3 bg-white rounded-lg shadow hover:shadow-lg transition-all duration-200 border border-gray-100 hover:border-blue-200"
                     >
                         <!-- 翻墙标识 - 始终显示 -->
@@ -164,6 +165,15 @@ function navigation() {
             }
 
             return filteredCats;
+        },
+
+        async recordClick(id) {
+            try {
+                // 发后不理，不阻塞跳转
+                fetch(`/api/links/${id}/click`, { method: 'POST' });
+            } catch (e) {
+                // 静默失败
+            }
         }
     };
 }

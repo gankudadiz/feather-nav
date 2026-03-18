@@ -62,6 +62,8 @@ Flight::group('/api', function () {
     Flight::route('GET /categories', [CategoryController::class, 'index']);
     // 链接 - 公开读取
     Flight::route('GET /links', [LinkController::class, 'index']);
+    // 链接 - 记录点击 (公开)
+    Flight::route('POST /links/@id/click', [LinkController::class, 'recordClick']);
 });
 
 // 受保护 API 路由（需要认证）
@@ -157,6 +159,18 @@ Flight::group('/api', function () {
         validateCsrf();
         $l = new LinkController();
         $l->refreshIcon($id);
+    });
+    Flight::route('POST /links/@id/check', function ($id) {
+        requireAuth();
+        validateCsrf();
+        $l = new LinkController();
+        $l->checkLinkStatus($id);
+    });
+    Flight::route('POST /links/check-all', function () {
+        requireAuth();
+        validateCsrf();
+        $l = new LinkController();
+        $l->checkAllLinksStatus();
     });
     Flight::route('DELETE /links/@id', function ($id) {
         requireAuth();

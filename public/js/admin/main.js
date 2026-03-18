@@ -76,6 +76,8 @@ function adminInit() {
             title: '',
             message: '',
             type: 'danger',
+            showVpnToggle: false, // 是否显示 VPN 开关
+            vpnEnabled: false,    // VPN 开关的状态
             resolve: null // 用于保存 Promise 的 resolve 函数
         },
 
@@ -603,11 +605,13 @@ function adminInit() {
         },
 
         // 显示自定义确认弹窗，返回 Promise<boolean>
-        showConfirm(title, message, type = 'danger') {
+        showConfirm(title, message, type = 'danger', showVpnToggle = false) {
             return new Promise(resolve => {
                 this.dialog.title = title;
                 this.dialog.message = message;
                 this.dialog.type = type;
+                this.dialog.showVpnToggle = showVpnToggle;
+                this.dialog.vpnEnabled = false; // 默认关闭
                 this.dialog.resolve = resolve;
                 this.dialog.visible = true;
             });
@@ -973,6 +977,58 @@ function adminInit() {
             } catch (e) {
                 console.error('保存设置项出错:', e);
                 this.showToast('保存失败，请检查网络后重试', 'error');
+            }
+        },
+
+        async checkLink(link) {
+            try {
+                this.showToast(`正在检测: ${link.title}...`, 'success');
+                const res = await fetch(`/api/links/${link.id}/check`, {
+                    method: 'POST',
+                    headers: { 'X-CSRF-Token': this.csrfToken }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    this.showToast(`检测完成: ${data.status}`, data.status >= 200 && data.status < 400 ? 'success' : 'error');
+                    await this.loadData();
+                    this.filterLinks();
+                }
+            } catch (e) {
+                this.showToast('检测失败', 'error');
+            }
+        },
+
+        async checkAllLinks() {
+            const confirmed = await this.showConfirm(
+                '全量死链检测',
+                '确认要检测所有链接的可用性吗？如果链接较多，这可能需要几十秒到几分钟时间，期间请勿刷新页面。',
+                'warning',
+                true // 开启 VPN 开关显示
+            );
+            if (!confirmed) return;
+
+            const includeVpn = this.dialog.vpnEnabled;
+
+            try {
+                this.showToast(includeVpn ? '全量检测（包含需VPN链接）已启动...' : '全量检测（仅直连链接）已启动...', 'success');
+                const res = await fetch('/api/links/check-all', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': this.csrfToken 
+                    },
+                    body: JSON.stringify({ include_vpn: includeVpn })
+                });
+                if (res.ok) {
+                    this.showToast('全量检测完成！', 'success');
+                    await this.loadData();
+                    this.filterLinks();
+                } else {
+                    this.showToast('全量检测失败', 'error');
+                }
+            } catch (e) {
+                console.error('Check all links error:', e);
+                this.showToast('检测过程中发生错误', 'error');
             }
         }
     };

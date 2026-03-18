@@ -1,6 +1,17 @@
-<!-- 分类编辑模态框 -->
-<div x-show="showEditCategoryModal" class="fixed inset-0 bg-black bg-opacity-50 z-50" x-transition>
-    <div class="bg-white rounded-lg p-6 max-w-md mx-auto mt-20" @click.away="showEditCategoryModal=false">
+<div x-show="showEditCategoryModal" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto" style="display: none;">
+    <!-- 独立的背景遮罩层 -->
+    <div x-show="showEditCategoryModal" 
+        class="fixed inset-0 bg-black bg-opacity-50 transition-opacity" 
+        @click="showEditCategoryModal = false" 
+        x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+        x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+    </div>
+    
+    <!-- 模态框主体内容 -->
+    <div x-show="showEditCategoryModal" 
+        class="relative bg-white rounded-lg p-6 w-full max-w-md my-20 shadow-xl transform transition-all"
+        x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+        x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
         <h3 class="text-lg font-bold mb-4">编辑分类</h3>
         <form @submit.prevent="updateCategory">
             <input type="text" x-model="editingCategory.name" placeholder="分类名称"

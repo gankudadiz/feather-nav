@@ -35,8 +35,24 @@
                 </div>
                 <div class="flex-1 pt-1">
                     <h3 class="text-base font-semibold text-gray-900" x-text="dialog.title"></h3>
-                    <p class="mt-2 text-sm text-gray-500 leading-relaxed whitespace-pre-line" x-text="dialog.message">
-                    </p>
+                    <p class="mt-2 text-sm text-gray-500 leading-relaxed whitespace-pre-line" x-text="dialog.message"></p>
+                    
+                    <!-- 动态注入的 VPN 选项 (仅在全量检测时触发) -->
+                    <template x-if="dialog.showVpnToggle">
+                        <div class="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-100">
+                            <label class="flex items-center cursor-pointer group">
+                                <div class="relative">
+                                    <input type="checkbox" x-model="dialog.vpnEnabled" class="sr-only">
+                                    <div class="w-10 h-5 bg-gray-200 rounded-full shadow-inner transition-colors duration-300" :class="dialog.vpnEnabled ? 'bg-blue-500' : 'bg-gray-200'"></div>
+                                    <div class="absolute inset-y-0 left-0 w-5 h-5 bg-white rounded-full shadow transform transition-transform duration-300" :class="dialog.vpnEnabled ? 'translate-x-5' : 'translate-x-0'"></div>
+                                </div>
+                                <div class="ml-3 text-sm font-medium text-gray-700 select-none">
+                                    同时探测需 VPN 的链接
+                                    <p class="text-[10px] text-gray-400 font-normal mt-0.5">※ 若服务器环境未开启 VPN，此类链接可能被误报为失效</p>
+                                </div>
+                            </label>
+                        </div>
+                    </template>
                 </div>
             </div>
             <!-- 操作按钮 -->
