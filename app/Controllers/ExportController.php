@@ -85,6 +85,87 @@ class ExportController
     }
 
     /**
+     * 导出为 SQL 备份格式
+     */
+    public function exportSql(): void
+    {
+        $db = Flight::db()->getConnection();
+        $dbName = getenv('DB_DATABASE') ?: 'personal_nav';
+        $sql = "";
+
+        // 文件头
+        $sql .= "-- Feather Nav 数据库备份\n";
+        $sql .= "-- 生成时间: " . date('Y-m-d H:i:s') . "\n";
+        $sql .= "-- 数据库: {$dbName}\n\n";
+        $sql .= "SET NAMES utf8mb4;\n";
+        $sql .= "SET FOREIGN_KEY_CHECKS=0;\n\n";
+
+        // 获取所有表
+        $tables = $db->query("SHOW TABLES")->fetchAll(\PDO::FETCH_COLUMN);
+
+        foreach ($tables as $table) {
+            // 表结构
+            $createTable = $db->query("SHOW CREATE TABLE `{$table}`")->fetch(\PDO::FETCH_ASSOC);
+            $sql .= "-- ----------------------------\n";
+            $sql .= "-- Table structure for {$table}\n";
+            $sql .= "-- ----------------------------\n";
+            $sql .= "DROP TABLE IF EXISTS `{$table}`;\n";
+            $sql .= $createTable['Create Table'] . ";\n\n";
+
+            // 表数据
+            $stmt = $db->query("SELECT * FROM `{$table}`");
+            $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+            if (!empty($rows)) {
+                $sql .= "-- ----------------------------\n";
+                $sql .= "-- Records of {$table}\n";
+                $sql .= "-- ----------------------------\n";
+
+                $columns = array_keys($rows[0]);
+                $sql .= "INSERT INTO `{$table}` (`" . implode('`, `', $columns) . "`) VALUES\n";
+
+                $values = [];
+                foreach ($rows as $row) {
+                    $rowValues = [];
+                    foreach ($row as $value) {
+                        if ($value === null) {
+                            $rowValues[] = 'NULL';
+                        } elseif (is_int($value) || is_float($value)) {
+                            $rowValues[] = $value;
+                        } else {
+                            $rowValues[] = $db->quote((string) $value);
+                        }
+                    }
+                    $values[] = '(' . implode(', ', $rowValues) . ')';
+                }
+                $sql .= implode(",\n", $values) . ";\n\n";
+            }
+        }
+
+        $sql .= "SET FOREIGN_KEY_CHECKS=1;\n";
+
+        $filename = 'feather_nav_backup_' . date('Ymd_His') . '.sql';
+
+        // 记录审计日志
+        LogHelper::log('export_sql', "执行了数据库 SQL 备份导出");
+
+        // 清除之前的输出缓冲
+        if (ob_get_level()) {
+            ob_end_clean();
+        }
+
+        // 设置下载 Headers
+        header('Content-Type: application/octet-stream');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Content-Length: ' . strlen($sql));
+        header('Cache-Control: no-cache, must-revalidate');
+        header('Pragma: public');
+
+        echo $sql;
+        exit;
+    }
+
+    /**
      * 导出为 HTML 书签格式 (Netscape Bookmark Format)
      */
     public function exportHtml(): void

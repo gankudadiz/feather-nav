@@ -71,3 +71,26 @@
         </div>
     </div>
 </div>
+
+<!-- 数据库备份 -->
+<div class="bg-white rounded-lg shadow-sm border border-gray-200 mt-6">
+    <div class="px-6 py-4 border-b border-gray-200 bg-gray-50/50">
+        <h3 class="text-lg font-bold text-gray-800">💾 数据库备份</h3>
+        <p class="text-sm text-gray-500 mt-1">导出完整的数据库备份文件，包含表结构和所有数据。</p>
+    </div>
+    <div class="p-6">
+        <div class="flex items-center justify-between p-4 rounded-xl border border-gray-100 hover:border-blue-100 hover:bg-blue-50/10 transition-all">
+            <div>
+                <h4 class="text-sm font-semibold text-gray-700">导出 SQL 备份</h4>
+                <p class="text-xs text-gray-400 mt-1">生成 .sql 文件，可直接导入到 MySQL 数据库</p>
+            </div>
+            <a href="/api/export/sql"
+               class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all shadow-sm">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                </svg>
+                <span>导出备份</span>
+            </a>
+        </div>
+    </div>
+</div>
