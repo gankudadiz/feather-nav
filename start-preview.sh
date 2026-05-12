@@ -49,8 +49,8 @@ npm run build
 # 启动服务器
 echo ""
 echo "🚀 启动预览服务器..."
-echo "访问地址：http://localhost:8080"
-echo "管理后台：http://localhost:8080/admin"
+echo "访问地址：http://127.0.0.1:8100"
+echo "管理后台：http://127.0.0.1:8100/admin"
 echo "登录账号：请查看 .env 文件 (默认: admin / admin123)"
 echo ""
 echo "首次运行请确保已执行：php scripts/setup_db.php"
@@ -58,4 +58,4 @@ echo ""
 echo "按 Ctrl+C 停止服务器"
 echo ""
 
-php -S localhost:8080 -t public
+php -S 127.0.0.1:8100 -t public

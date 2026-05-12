@@ -38,8 +38,8 @@ mkdir -p storage/logs
 
 echo "启动服务..."
 echo "======================================="
-echo "PHP服务器: http://localhost:8080"
-echo "Vite开发服务器: http://localhost:5173"
+echo "PHP服务器: http://127.0.0.1:8100"
+echo "Vite开发服务器: http://127.0.0.1:5173"
 echo "======================================="
 echo "按 Ctrl+C 停止所有服务"
 echo ""
@@ -52,7 +52,7 @@ VITE_PID=$!
 sleep 2
 
 # 启动PHP内置服务器
-php -S localhost:8080 -t public
+php -S 127.0.0.1:8100 -t public
 
 # 当PHP服务器停止时，也停止Vite服务器
 kill $VITE_PID 2>/dev/null

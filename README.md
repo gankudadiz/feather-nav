@@ -88,12 +88,12 @@ chmod +x start-preview.sh
 
 6. **启动开发服务器**
    ```bash
-   php -S localhost:8080 -t public
+   php -S 127.0.0.1:8100 -t public
    ```
 
 7. **访问网站**
-   - 首页：http://localhost:8080
-   - 管理后台：http://localhost:8080/admin
+   - 首页：http://127.0.0.1:8100
+   - 管理后台：http://127.0.0.1:8100/admin
    - 默认登录：admin / admin123
 
 ### 开发模式
@@ -120,14 +120,14 @@ chmod +x start-dev.sh
 npm run dev
 
 # 终端2：启动 PHP 服务器
-php -S localhost:8080 -t public
+php -S 127.0.0.1:8100 -t public
 ```
 
 #### 服务地址
 
-- **网站首页**：http://localhost:8080
-- **管理后台**：http://localhost:8080/admin
-- **Vite开发服务器**：http://localhost:5173（用于前端资源）
+- **网站首页**：http://127.0.0.1:8100
+- **管理后台**：http://127.0.0.1:8100/admin
+- **Vite开发服务器**：http://127.0.0.1:5173（用于前端资源）
 
 #### 热更新说明
 

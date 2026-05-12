@@ -30,7 +30,7 @@ function requireAuth()
             Flight::json(['error' => 'Unauthorized'], 401);
         } else {
             // 使用完整的URL进行重定向
-            $baseUrl = $_ENV['APP_URL'] ?? 'http://localhost:8080';
+            $baseUrl = $_ENV['APP_URL'] ?? 'http://127.0.0.1:8100';
             Flight::redirect($baseUrl . '/auth/login');
         }
         exit;

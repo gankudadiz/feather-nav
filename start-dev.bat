@@ -95,8 +95,8 @@ if not exist "storage\logs" mkdir storage\logs
 
 echo [INFO] Starting services...
 echo =======================================
-echo PHP Server: http://localhost:8080
-echo Vite Server: http://localhost:5173
+echo PHP Server: http://127.0.0.1:8100
+echo Vite Server: http://127.0.0.1:5173
 echo =======================================
 echo Press Ctrl+C to stop all services
 echo.
@@ -110,7 +110,7 @@ timeout /t 3 /nobreak >nul
 
 REM Start PHP server
 echo [INFO] Starting PHP Server...
-php -S localhost:8080 -t public
+php -S 127.0.0.1:8100 -t public
 
 if errorlevel 1 (
     echo [ERROR] PHP Server exited with error.

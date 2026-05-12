@@ -21,7 +21,7 @@ class AssetHelper
             // 开发环境下直接返回Vite开发服务器的URL
             $vitePort = 5173;
             $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-            $host = $_SERVER['HTTP_HOST'] ?? 'localhost:8080';
+            $host = $_SERVER['HTTP_HOST'] ?? '127.0.0.1:8100';
             
             // 提取端口前的部分作为host
             $host = explode(':', $host)[0] . ':' . $vitePort;

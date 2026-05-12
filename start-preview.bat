@@ -80,8 +80,8 @@ if errorlevel 1 (
 REM Start server
 echo.
 echo [INFO] Starting preview server...
-echo URL: http://localhost:8080
-echo Admin: http://localhost:8080/admin
+echo URL: http://127.0.0.1:8100
+echo Admin: http://127.0.0.1:8100/admin
 echo Credentials: See .env file (Default: admin / admin123)
 echo.
 echo First run? Make sure to run: php scripts/setup_db.php
@@ -89,7 +89,7 @@ echo.
 echo Press Ctrl+C to stop server.
 echo.
 
-php -S localhost:8080 -t public
+php -S 127.0.0.1:8100 -t public
 
 if errorlevel 1 (
     echo [ERROR] Server exited unexpectedly.

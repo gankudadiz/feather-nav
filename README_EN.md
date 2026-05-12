@@ -88,12 +88,12 @@ This script will automatically detect the environment, install dependencies, bui
 
 6. **Start Development Server**
    ```bash
-   php -S localhost:8080 -t public
+   php -S 127.0.0.1:8100 -t public
    ```
 
 7. **Access the Website**
-   - Home: http://localhost:8080
-   - Admin Panel: http://localhost:8080/admin
+   - Home: http://127.0.0.1:8100
+   - Admin Panel: http://127.0.0.1:8100/admin
    - Default Login: admin / admin123
 
 ### Development Mode
@@ -120,14 +120,14 @@ chmod +x start-dev.sh
 npm run dev
 
 # Terminal 2: Start PHP Server
-php -S localhost:8080 -t public
+php -S 127.0.0.1:8100 -t public
 ```
 
 #### Service URLs
 
-- **Website Home**: http://localhost:8080
-- **Admin Panel**: http://localhost:8080/admin
-- **Vite Dev Server**: http://localhost:5173 (for frontend assets)
+- **Website Home**: http://127.0.0.1:8100
+- **Admin Panel**: http://127.0.0.1:8100/admin
+- **Vite Dev Server**: http://127.0.0.1:5173 (for frontend assets)
 
 #### HMR Details
 

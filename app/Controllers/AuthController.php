@@ -23,7 +23,7 @@ class AuthController
         // 验证CSRF token
         $csrf = new CsrfMiddleware();
         if (!$csrf->validateToken()) {
-            $baseUrl = $_ENV['APP_URL'] ?? 'http://localhost:8080';
+            $baseUrl = $_ENV['APP_URL'] ?? 'http://127.0.0.1:8100';
             Flight::redirect($baseUrl . '/auth/login?error=csrf');
             return;
         }
@@ -35,7 +35,7 @@ class AuthController
         // Check lock
         if (CaptchaHelper::isLocked($username)) {
             LogHelper::log('auth_login_locked', "登录拦截：账号已锁定 (用户: $username)");
-            $baseUrl = $_ENV['APP_URL'] ?? 'http://localhost:8080';
+            $baseUrl = $_ENV['APP_URL'] ?? 'http://127.0.0.1:8100';
             Flight::redirect($baseUrl . '/auth/login?error=locked');
             return;
         }
@@ -51,7 +51,7 @@ class AuthController
                 CaptchaHelper::recordFailure($username);
                 unset($_SESSION['captcha_answer']);
 
-                $baseUrl = $_ENV['APP_URL'] ?? 'http://localhost:8080';
+                $baseUrl = $_ENV['APP_URL'] ?? 'http://127.0.0.1:8100';
                 Flight::redirect($baseUrl . '/auth/login?error=captcha');
                 return;
             }
@@ -82,14 +82,14 @@ class AuthController
             LogHelper::log('auth_login_success', "登录成功 (用户: $username)", $user['id']);
             
             // 使用完整的URL进行重定向
-            $baseUrl = $_ENV['APP_URL'] ?? 'http://localhost:8080';
+            $baseUrl = $_ENV['APP_URL'] ?? 'http://127.0.0.1:8100';
             Flight::redirect($baseUrl . '/admin');
         } else {
             // 登录失败，记录失败次数
             LogHelper::log('auth_login_failed', "登录失败：凭据无效 (用户: $username)");
             CaptchaHelper::recordFailure($username);
 
-            $baseUrl = $_ENV['APP_URL'] ?? 'http://localhost:8080';
+            $baseUrl = $_ENV['APP_URL'] ?? 'http://127.0.0.1:8100';
             Flight::redirect($baseUrl . '/auth/login?error=1');
         }
     }
@@ -101,7 +101,7 @@ class AuthController
         }
         LogHelper::log('auth_logout', '退出登录');
         session_destroy();
-        $baseUrl = $_ENV['APP_URL'] ?? 'http://localhost:8080';
+        $baseUrl = $_ENV['APP_URL'] ?? 'http://127.0.0.1:8100';
         Flight::redirect($baseUrl . '/');
     }
 }

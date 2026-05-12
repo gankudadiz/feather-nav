@@ -20,7 +20,7 @@ class HomeController
                 session_start();
             }
             if (!isset($_SESSION['user_id'])) {
-                $baseUrl = $_ENV['APP_URL'] ?? 'http://localhost:8080';
+                $baseUrl = $_ENV['APP_URL'] ?? 'http://127.0.0.1:8100';
                 Flight::redirect($baseUrl . '/auth/login');
                 exit;
             }
