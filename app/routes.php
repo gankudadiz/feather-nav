@@ -89,6 +89,11 @@ Flight::group('/api', function () {
         $e = new ExportController();
         $e->exportSql();
     });
+    Flight::route('GET /export/assets', function () {
+        requireAuth();
+        $e = new ExportController();
+        $e->exportAssets();
+    });
     Flight::route('POST /import/upload', function () {
         requireAuth();
         validateCsrf();

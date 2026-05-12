@@ -72,24 +72,40 @@
     </div>
 </div>
 
-<!-- 数据库备份 -->
+<!-- 数据备份 -->
 <div class="bg-white rounded-lg shadow-sm border border-gray-200 mt-6">
     <div class="px-6 py-4 border-b border-gray-200 bg-gray-50/50">
-        <h3 class="text-lg font-bold text-gray-800">💾 数据库备份</h3>
-        <p class="text-sm text-gray-500 mt-1">导出完整的数据库备份文件，包含表结构和所有数据。</p>
+        <h3 class="text-lg font-bold text-gray-800">💾 数据备份</h3>
+        <p class="text-sm text-gray-500 mt-1">导出数据库和资源文件的备份。</p>
     </div>
-    <div class="p-6">
+    <div class="p-6 space-y-3">
+        <!-- SQL 备份 -->
         <div class="flex items-center justify-between p-4 rounded-xl border border-gray-100 hover:border-blue-100 hover:bg-blue-50/10 transition-all">
             <div>
                 <h4 class="text-sm font-semibold text-gray-700">导出 SQL 备份</h4>
-                <p class="text-xs text-gray-400 mt-1">生成 .sql 文件，可直接导入到 MySQL 数据库</p>
+                <p class="text-xs text-gray-400 mt-1">生成 .sql 文件，包含表结构和所有数据，可直接导入到 MySQL</p>
             </div>
             <a href="/api/export/sql"
                class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all shadow-sm">
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
                 </svg>
-                <span>导出备份</span>
+                <span>导出 SQL</span>
+            </a>
+        </div>
+
+        <!-- 资源文件备份 -->
+        <div class="flex items-center justify-between p-4 rounded-xl border border-gray-100 hover:border-blue-100 hover:bg-blue-50/10 transition-all">
+            <div>
+                <h4 class="text-sm font-semibold text-gray-700">导出资源文件</h4>
+                <p class="text-xs text-gray-400 mt-1">打包下载所有网站图标等资源文件（ZIP 格式）</p>
+            </div>
+            <a href="/api/export/assets"
+               class="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all shadow-sm">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path>
+                </svg>
+                <span>导出资源</span>
             </a>
         </div>
     </div>

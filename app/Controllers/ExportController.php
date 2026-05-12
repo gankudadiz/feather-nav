@@ -85,6 +85,32 @@ class ExportController
     }
 
     /**
+     * 获取备份时间
+     */
+    private function getBackupTime(): string
+    {
+        return date('Y-m-d H:i:s');
+    }
+
+    /**
+     * 获取文件数量
+     */
+    private function getFileCount(string $dir): int
+    {
+        $count = 0;
+        $files = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($dir),
+            \RecursiveIteratorIterator::LEAVES_ONLY
+        );
+        foreach ($files as $file) {
+            if ($file->isFile()) {
+                $count++;
+            }
+        }
+        return $count;
+    }
+
+    /**
      * 导出为 SQL 备份格式
      */
     public function exportSql(): void
@@ -162,6 +188,133 @@ class ExportController
         header('Pragma: public');
 
         echo $sql;
+        exit;
+    }
+
+    /**
+     * 导出资源文件为 ZIP 压缩包
+     */
+    public function exportAssets(): void
+    {
+        $uploadDir = realpath(__DIR__ . '/../../public/uploads');
+
+        if (!$uploadDir || !is_dir($uploadDir)) {
+            Flight::json(['error' => '资源目录不存在'], 404);
+            return;
+        }
+
+        // 检查是否有文件
+        $files = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($uploadDir),
+            \RecursiveIteratorIterator::LEAVES_ONLY
+        );
+
+        $hasFiles = false;
+        foreach ($files as $file) {
+            if ($file->isFile()) {
+                $hasFiles = true;
+                break;
+            }
+        }
+
+        if (!$hasFiles) {
+            Flight::json(['error' => '没有可导出的资源文件'], 404);
+            return;
+        }
+
+        // 创建 ZIP
+        $zip = new \ZipArchive();
+        $zipFilename = sys_get_temp_dir() . '/feather_nav_assets_' . date('Ymd_His') . '.zip';
+
+        if ($zip->open($zipFilename, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
+            Flight::json(['error' => '无法创建压缩文件'], 500);
+            return;
+        }
+
+        // 遍历 uploads 目录添加文件
+        $files = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($uploadDir),
+            \RecursiveIteratorIterator::LEAVES_ONLY
+        );
+
+        foreach ($files as $file) {
+            if (!$file->isFile()) {
+                continue;
+            }
+
+            $filePath = $file->getRealPath();
+            $relativePath = 'uploads/' . substr($filePath, strlen($uploadDir) + 1);
+            $zip->addFile($filePath, $relativePath);
+        }
+
+        // 添加恢复说明文档
+        $readme = <<<README
+============================================================
+        Feather Nav 资源文件备份恢复说明
+============================================================
+备份时间: {$this->getBackupTime()}
+文件数量: {$this->getFileCount($uploadDir)}
+============================================================
+
+【恢复步骤】
+
+1. 上传项目文件到新服务器
+   确保项目目录结构完整
+
+2. 解压资源文件
+   将本压缩包解压到项目根目录，使文件恢复到 public/uploads/ 目录
+
+3. 设置目录权限
+   chmod -R 755 public/uploads
+   chown -R www:www public/uploads  (根据实际 web 用户调整)
+
+4. 验证
+   访问后台管理页面，检查网站图标是否正常显示
+
+【目录结构】
+public/
+└── uploads/
+    └── favicons/      # 网站图标文件
+        ├── xxx.ico
+        ├── xxx.png
+        └── xxx.jpg
+
+【注意事项】
+- 资源文件不纳入版本控制（已在 .gitignore 中排除）
+- 必须单独备份和恢复
+- 无需创建软链接，直接解压到项目根目录即可
+
+============================================================
+README;
+
+        $zip->addFromString('README_恢复说明.txt', $readme);
+        $zip->close();
+
+        // 读取 ZIP 内容
+        $zipContent = file_get_contents($zipFilename);
+        $zipSize = filesize($zipFilename);
+
+        // 删除临时文件
+        unlink($zipFilename);
+
+        $filename = 'feather_nav_assets_' . date('Ymd_His') . '.zip';
+
+        // 记录审计日志
+        LogHelper::log('export_assets', "执行了资源文件备份导出");
+
+        // 清除输出缓冲
+        if (ob_get_level()) {
+            ob_end_clean();
+        }
+
+        // 设置下载 Headers
+        header('Content-Type: application/zip');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Content-Length: ' . $zipSize);
+        header('Cache-Control: no-cache, must-revalidate');
+        header('Pragma: public');
+
+        echo $zipContent;
         exit;
     }
 
