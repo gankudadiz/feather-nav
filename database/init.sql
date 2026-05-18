@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS `links` (
     `url` VARCHAR(500) NOT NULL,
     `description` VARCHAR(255) DEFAULT NULL,
     `need_vpn` TINYINT(1) DEFAULT 0 COMMENT '是否需要翻墙：0-不需要，1-需要',
+    `is_private` TINYINT(1) DEFAULT 0 COMMENT '是否隐私链接：0-公开，1-隐私',
     `icon` VARCHAR(500) DEFAULT NULL,
     `sort_order` INT DEFAULT 0,
     `click_count` INT UNSIGNED DEFAULT 0 COMMENT '累计点击次数',
@@ -24,7 +25,8 @@ CREATE TABLE IF NOT EXISTS `links` (
     `last_check_at` TIMESTAMP NULL DEFAULT NULL COMMENT '最后一次检测时间',
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (`category_id`) REFERENCES `categories`(`id`) ON DELETE SET NULL,
-    INDEX `idx_click_count` (`click_count`)
+    INDEX `idx_click_count` (`click_count`),
+    INDEX `idx_is_private` (`is_private`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 创建 need_vpn 索引

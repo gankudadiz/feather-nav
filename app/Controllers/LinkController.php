@@ -95,10 +95,64 @@ class LinkController
     public function index(): void
     {
         $db = Flight::db()->getConnection();
-        $stmt = $db->query('SELECT id, category_id, title, url, description, need_vpn, icon, sort_order, click_count, last_status, last_check_at, created_at FROM links ORDER BY sort_order ASC');
-        $links = $stmt->fetchAll();
+        $privatePassword = $_ENV['PRIVATE_SPACE_PASSWORD'] ?? '';
 
-        Flight::json($links);
+        if (session_status() === PHP_SESSION_NONE) {
+            // 设置 session 有效期为 12 小时
+            ini_set('session.gc_maxlifetime', 43200);
+            session_start();
+        }
+
+        // 管理员已登录，返回所有链接（包括隐私链接）
+        $isAdmin = !empty($_SESSION['user_id']);
+
+        if (!$isAdmin && !empty($privatePassword)) {
+            // 非管理员：检查是否已通过隐私密码验证
+            $sessionVerified = !empty($_SESSION['private_verified']);
+
+            // 也支持 URL 参数方式（兼容）
+            $password = Flight::request()->query->password ?? '';
+            $paramVerified = $password === $privatePassword;
+
+            if (!$sessionVerified && !$paramVerified) {
+                // 未验证，只返回公开链接
+                $sql = 'SELECT id, category_id, title, url, description, need_vpn, is_private, icon, sort_order, click_count, last_status, last_check_at, created_at FROM links WHERE is_private = 0 ORDER BY sort_order ASC';
+                $stmt = $db->query($sql);
+                Flight::json($stmt->fetchAll());
+                return;
+            }
+        }
+
+        // 管理员或已验证用户，返回所有链接
+        $sql = 'SELECT id, category_id, title, url, description, need_vpn, is_private, icon, sort_order, click_count, last_status, last_check_at, created_at FROM links ORDER BY sort_order ASC';
+        $stmt = $db->query($sql);
+        Flight::json($stmt->fetchAll());
+    }
+
+    public function verifyPrivate(): void
+    {
+        $jsonData = file_get_contents('php://input');
+        $data = json_decode($jsonData, true) ?: [];
+
+        $password = $data['password'] ?? '';
+        $privatePassword = $_ENV['PRIVATE_SPACE_PASSWORD'] ?? '';
+
+        if (empty($privatePassword)) {
+            Flight::json(['success' => false, 'message' => '隐私空间未启用'], 403);
+            return;
+        }
+
+        if ($password === $privatePassword) {
+            if (session_status() === PHP_SESSION_NONE) {
+                // 设置 session 有效期为 12 小时
+                ini_set('session.gc_maxlifetime', 43200);
+                session_start();
+            }
+            $_SESSION['private_verified'] = true;
+            Flight::json(['success' => true, 'message' => '验证成功']);
+        } else {
+            Flight::json(['success' => false, 'message' => '密码错误'], 401);
+        }
     }
 
     public function store(): void
@@ -142,7 +196,7 @@ class LinkController
 
         $db = Flight::db()->getConnection();
         $stmt = $db->prepare(
-            'INSERT INTO links (category_id, title, url, description, need_vpn, icon, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?)'
+            'INSERT INTO links (category_id, title, url, description, need_vpn, is_private, icon, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
         );
         $stmt->execute([
             $data['category_id'] ?: null,
@@ -150,6 +204,7 @@ class LinkController
             $data['url'],
             $data['description'] ?? null,
             isset($data['need_vpn']) ? (int) $data['need_vpn'] : 0,
+            isset($data['is_private']) ? (int) $data['is_private'] : 0,
             $data['icon'] ?? null,
             $data['sort_order'] ?? 0
         ]);
@@ -215,7 +270,7 @@ class LinkController
         }
 
         $stmt = $db->prepare(
-            'UPDATE links SET category_id = ?, title = ?, url = ?, description = ?, need_vpn = ?, icon = ?, sort_order = ? WHERE id = ?'
+            'UPDATE links SET category_id = ?, title = ?, url = ?, description = ?, need_vpn = ?, is_private = ?, icon = ?, sort_order = ? WHERE id = ?'
         );
         $stmt->execute([
             $data['category_id'] ?: null,
@@ -223,6 +278,7 @@ class LinkController
             $data['url'],
             $data['description'] ?? null,
             isset($data['need_vpn']) ? (int) $data['need_vpn'] : 0,
+            isset($data['is_private']) ? (int) $data['is_private'] : 0,
             $data['icon'] ?? null,
             $data['sort_order'] ?? 0,
             $id

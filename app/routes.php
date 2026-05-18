@@ -64,6 +64,8 @@ Flight::group('/api', function () {
     Flight::route('GET /links', [LinkController::class, 'index']);
     // 链接 - 记录点击 (公开)
     Flight::route('POST /links/@id/click', [LinkController::class, 'recordClick']);
+    // 隐私空间验证
+    Flight::route('POST /verify-private', [LinkController::class, 'verifyPrivate']);
 });
 
 // 受保护 API 路由（需要认证）

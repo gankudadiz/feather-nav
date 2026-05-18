@@ -81,6 +81,20 @@
                 </div>
             </div>
 
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">隐私设置</label>
+                <div class="flex gap-4">
+                    <label class="flex items-center">
+                        <input type="radio" x-model="editingLink.is_private" value="0" class="mr-2">
+                        <span class="text-gray-700">🌐 公开</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="radio" x-model="editingLink.is_private" value="1" class="mr-2">
+                        <span class="text-purple-600">🔒 隐私</span>
+                    </label>
+                </div>
+            </div>
+
             <div class="flex gap-2">
                 <button type="submit" class="flex-1 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
                     保存

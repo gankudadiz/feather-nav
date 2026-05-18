@@ -13,6 +13,7 @@ function adminInit() {
             url: '',
             description: '',
             need_vpn: '0',
+            is_private: '0',
             icon: ''
         },
 
@@ -332,7 +333,7 @@ function adminInit() {
                 }
 
                 this.showToast('链接添加成功', 'success');
-                this.newLink = { category_id: '', title: '', url: '', description: '', need_vpn: '0', icon: '' };
+                this.newLink = { category_id: '', title: '', url: '', description: '', need_vpn: '0', is_private: '0', icon: '' };
                 this.currentTab = 'links';
                 await this.loadData();
                 this.filterLinks();
@@ -517,6 +518,7 @@ function adminInit() {
                 url: link.url,
                 description: link.description || '',
                 need_vpn: link.need_vpn.toString(),
+                is_private: (link.is_private || 0).toString(),
                 icon: link.icon || '',
                 sort_order: link.sort_order || 0
             };

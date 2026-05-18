@@ -113,6 +113,8 @@
                                     <!-- 翻墙标识 -->
                                     <span x-show="link.need_vpn == 1" class="text-xs px-1.5 py-0.5 rounded bg-red-50 text-red-600 border border-red-100 font-medium">VPN</span>
                                     <span x-show="link.need_vpn == 0" class="text-xs px-1.5 py-0.5 rounded bg-green-50 text-green-600 border border-green-100 font-medium">直连</span>
+                                    <!-- 隐私标识 -->
+                                    <span x-show="link.is_private == 1" class="text-xs px-1.5 py-0.5 rounded bg-purple-50 text-purple-600 border border-purple-100 font-medium">隐私</span>
                                 </div>
                             </td>
                             <td class="py-1.5 text-sm text-center font-mono text-gray-500" x-text="link.click_count || 0"></td>

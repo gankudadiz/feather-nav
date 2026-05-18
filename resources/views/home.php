@@ -35,6 +35,60 @@
                 >
                     🛡️ 需要翻墙
                 </button>
+
+                <!-- 隐私空间入口 -->
+                <button
+                    @click="showPrivateDialog = true"
+                    x-show="!privateVerified"
+                    class="px-4 py-2 bg-purple-100 text-purple-700 rounded-lg text-sm font-medium hover:bg-purple-200 transition-colors"
+                >
+                    🔒 隐私空间
+                </button>
+                <span
+                    x-show="privateVerified"
+                    class="px-4 py-2 bg-purple-500 text-white rounded-lg text-sm font-medium"
+                >
+                    🔓 隐私已解锁
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 隐私密码输入弹窗 -->
+    <div
+        x-show="showPrivateDialog"
+        x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100"
+        x-transition:leave="transition ease-in duration-150"
+        x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0"
+        class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+        @click.self="showPrivateDialog = false"
+    >
+        <div class="bg-white rounded-lg p-6 w-80 shadow-xl" @click.stop>
+            <h3 class="text-lg font-bold mb-4">输入隐私空间密码</h3>
+            <input
+                type="password"
+                x-model="privatePassword"
+                @keyup.enter="verifyPrivate()"
+                placeholder="请输入密码"
+                class="w-full px-3 py-2 border rounded-lg mb-3 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            >
+            <p x-show="privateError" class="text-red-500 text-sm mb-3" x-text="privateError"></p>
+            <div class="flex justify-end gap-2">
+                <button
+                    @click="showPrivateDialog = false; privatePassword = ''; privateError = ''"
+                    class="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
+                >
+                    取消
+                </button>
+                <button
+                    @click="verifyPrivate()"
+                    class="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
+                >
+                    确认
+                </button>
             </div>
         </div>
     </div>
@@ -109,6 +163,11 @@ function navigation() {
         categories: [],
         search: '',
         filterType: 'all',
+        // 隐私空间相关
+        showPrivateDialog: false,
+        privatePassword: '',
+        privateError: '',
+        privateVerified: false,
 
         async init() {
             await this.loadData();
@@ -124,12 +183,38 @@ function navigation() {
                 const categories = await categoriesRes.json();
                 const links = await linksRes.json();
 
+                // 检测是否包含隐私链接（表示已验证）
+                this.privateVerified = links.some(link => link.is_private == 1);
+
                 this.categories = categories.map(cat => ({
                     ...cat,
                     links: links.filter(link => link.category_id === cat.id)
                 }));
             } catch (e) {
                 console.error('Failed to load data:', e);
+            }
+        },
+
+        async verifyPrivate() {
+            this.privateError = '';
+            try {
+                const res = await fetch('/api/verify-private', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: this.privatePassword })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    this.showPrivateDialog = false;
+                    this.privatePassword = '';
+                    // 重新加载数据
+                    await this.loadData();
+                } else {
+                    this.privateError = data.message || '密码错误';
+                }
+            } catch (e) {
+                this.privateError = '验证失败，请重试';
             }
         },
 
