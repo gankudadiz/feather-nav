@@ -5,12 +5,19 @@
     <div class="mb-8 space-y-4">
         <!-- 搜索栏 -->
         <div class="flex flex-col sm:flex-row gap-4 items-center">
-            <input
-                type="text"
-                x-model="search"
-                placeholder="搜索链接..."
-                class="flex-1 max-w-md px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
+            <div class="flex-1 max-w-md relative">
+                <!-- 诱饵字段：阻止浏览器将凭据预填到搜索框 -->
+                <input type="text" name="username" style="position:absolute;opacity:0;height:0;width:0;pointer-events:none;" tabindex="-1" autocomplete="username">
+                <input type="password" name="password" style="position:absolute;opacity:0;height:0;width:0;pointer-events:none;" tabindex="-1" autocomplete="current-password">
+                <input
+                    type="text"
+                    x-model="search"
+                    placeholder="搜索链接..."
+                    name="q"
+                    autocomplete="off"
+                    class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+            </div>
             
             <!-- 筛选按钮组 -->
             <div class="flex gap-2">
