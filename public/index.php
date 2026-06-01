@@ -44,12 +44,34 @@ Flight::after('start', function () {
     // Content-Security-Policy (CSP)
     // script-src 添加 'unsafe-eval' 是因为 Alpine.js 需要执行 eval 风格的代码执行
     // connect-src 允许本地 Vite WebSocket
+    // WSL2环境下检测本机IP，使宿主机浏览器能访问Vite开发服务器
+    $localViteOrigin = '';
+    if ($isLocal) {
+        $localIp = $_SERVER['SERVER_ADDR'] ?? '';
+        if (!$localIp || $localIp === '127.0.0.1' || $localIp === '::1' || $localIp === '0.0.0.0' || !filter_var($localIp, FILTER_VALIDATE_IP)) {
+            // SERVER_ADDR 无效，仅在 WSL2 下用 hostname -I 获取虚拟机IP
+            // 非 WSL2 环境（普通Linux/Mac/Windows原生）直接用 127.0.0.1
+            $isWsl = file_exists('/proc/sys/fs/binfmt_misc/WSLInterop')
+                || stripos(php_uname('r'), 'microsoft') !== false
+                || stripos(php_uname('r'), 'WSL') !== false;
+            if ($isWsl) {
+                $wslIp = trim(shell_exec('hostname -I 2>/dev/null | awk \'{print $1}\''));
+                if ($wslIp && filter_var($wslIp, FILTER_VALIDATE_IP)) {
+                    $localIp = $wslIp;
+                }
+            }
+        }
+        if (!$localIp || !filter_var($localIp, FILTER_VALIDATE_IP)) {
+            $localIp = '127.0.0.1';
+        }
+        $localViteOrigin = "http://{$localIp}:5173 ws://{$localIp}:5173";
+    }
     $csp = "default-src 'self'; ";
-    $csp .= "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com " . ($isLocal ? "http://127.0.0.1:5173" : "") . "; ";
-    $csp .= "style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com " . ($isLocal ? "http://127.0.0.1:5173" : "") . "; ";
-    $csp .= "img-src 'self' data: https: " . ($isLocal ? "http://127.0.0.1:5173" : "") . "; ";
+    $csp .= "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com " . ($localViteOrigin ? "{$localViteOrigin}" : "") . "; ";
+    $csp .= "style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com " . ($localViteOrigin ? "{$localViteOrigin}" : "") . "; ";
+    $csp .= "img-src 'self' data: https: " . ($localViteOrigin ? "{$localViteOrigin}" : "") . "; ";
     $csp .= "font-src 'self' data: https:; ";
-    $csp .= "connect-src 'self' " . ($isLocal ? "ws://127.0.0.1:5173 http://127.0.0.1:5173" : "") . ";";
+    $csp .= "connect-src 'self' " . ($localViteOrigin ? "{$localViteOrigin}" : "") . ";";
 
     header("Content-Security-Policy: $csp");
 

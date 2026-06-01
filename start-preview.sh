@@ -1,61 +1,108 @@
 #!/bin/bash
+set -e
 
-echo "=== 个人导航网站预览脚本 ==="
+# ============================================================
+# 预览启动脚本（生产模式）
+# 构建前端资源后启动 PHP 服务器，无需 Vite 开发服务器
+# 自动检测 WSL2 环境并绑定到 0.0.0.0
+# ============================================================
+
+PHP_PORT=8100
+
+# ---------- 环境检测 ----------
+detect_env() {
+    if grep -qi microsoft /proc/version 2>/dev/null; then
+        echo "wsl"
+        return
+    fi
+    if [ -f /proc/sys/fs/binfmt_misc/WSLInterop ]; then
+        echo "wsl"
+        return
+    fi
+    if [ "$(uname -s)" = "Darwin" ]; then
+        echo "mac"
+        return
+    fi
+    echo "linux"
+}
+
+ENV_TYPE=$(detect_env)
+
+if [ "$ENV_TYPE" = "wsl" ]; then
+    PHP_BIND="0.0.0.0"
+    WSL_IP=$(hostname -I 2>/dev/null | awk '{print $1}')
+else
+    PHP_BIND="127.0.0.1"
+fi
+
+# ---------- 颜色 ----------
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+BOLD='\033[1m'
+NC='\033[0m'
+
+echo -e "${GREEN}${BOLD}=== 个人导航网站 - 预览模式 ===${NC}"
 echo ""
 
-# 检查 PHP
-if ! command -v php &> /dev/null; then
-    echo "❌ PHP 未安装"
-    exit 1
-fi
+# ---------- 依赖检查 ----------
+check_command() {
+    if ! command -v "$1" &> /dev/null; then
+        echo -e "${RED}❌ $1 未安装${NC}"
+        exit 1
+    fi
+}
 
-# 检查 Node.js
-if ! command -v node &> /dev/null; then
-    echo "❌ Node.js 未安装"
-    exit 1
-fi
+check_command php
+check_command node
+check_command composer
 
-# 检查 Composer
-if ! command -v composer &> /dev/null; then
-    echo "❌ Composer 未安装"
-    exit 1
-fi
-
-echo "✅ 环境检查通过"
+echo -e "${GREEN}✅ 环境检查通过${NC}"
 echo ""
 
-# 检查依赖
+# ---------- 安装依赖 ----------
 if [ ! -d "vendor" ]; then
-    echo "📦 安装 PHP 依赖..."
+    echo -e "${YELLOW}📦 安装 PHP 依赖...${NC}"
     composer install
 fi
 
 if [ ! -d "node_modules" ]; then
-    echo "📦 安装前端依赖..."
+    echo -e "${YELLOW}📦 安装前端依赖...${NC}"
     npm install
 fi
 
-# 检查 .env
+# ---------- 环境配置 ----------
 if [ ! -f ".env" ]; then
-    echo "⚙️  创建环境配置文件..."
+    echo -e "${YELLOW}⚙️  创建 .env 配置文件...${NC}"
     cp .env.example .env
-    echo "请编辑 .env 文件配置数据库连接"
+    echo "请编辑 .env 文件配置数据库连接后重新运行"
+    echo ""
 fi
 
-# 构建前端资源
-echo "🔨 构建前端资源..."
+# ---------- 构建前端 ----------
+echo -e "${YELLOW}🔨 构建前端资源...${NC}"
 npm run build
 
-# 启动服务器
+# ---------- 启动 ----------
 echo ""
-echo "🚀 启动预览服务器..."
-echo "访问地址：http://127.0.0.1:8100"
-echo "管理后台：http://127.0.0.1:8100/admin"
-echo "登录账号：请查看 .env 文件 (默认: admin / admin123)"
+echo -e "${GREEN}${BOLD}🚀 启动预览服务器${NC}"
+echo "======================================="
+if [ "$ENV_TYPE" = "wsl" ]; then
+    echo -e "运行环境: ${YELLOW}WSL2${NC}"
+    echo "访问地址:   http://127.0.0.1:${PHP_PORT}"
+    echo "管理后台:   http://127.0.0.1:${PHP_PORT}/admin"
+    echo "======================================="
+    echo -e "${YELLOW}提示: 从 Windows 浏览器访问请打开 http://127.0.0.1:${PHP_PORT}${NC}"
+else
+    echo "访问地址:   http://127.0.0.1:${PHP_PORT}"
+    echo "管理后台:   http://127.0.0.1:${PHP_PORT}/admin"
+    echo "======================================="
+fi
+echo "默认账号:   admin / admin123 (在 .env 中可修改)"
 echo ""
-echo "首次运行请确保已执行：php scripts/setup_db.php"
+echo "首次运行请确保已执行: php scripts/setup_db.php"
 echo ""
 echo "按 Ctrl+C 停止服务器"
 echo ""
 
-php -S 127.0.0.1:8100 -t public
+php -S ${PHP_BIND}:${PHP_PORT} -t public

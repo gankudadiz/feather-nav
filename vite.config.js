@@ -19,10 +19,7 @@ export default defineConfig(({ command }) => ({
         host: '0.0.0.0',
         strictPort: true,
         port: 5173,
-        origin: 'http://127.0.0.1:5173',
-        cors: true,
-        hmr: {
-            host: '127.0.0.1'
-        }
+        cors: true
+        // 在 WSL2 环境下不写死 origin/hmr.host，Vite 会自动检测请求来源
     }
 }));
