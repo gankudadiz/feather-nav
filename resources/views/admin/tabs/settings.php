@@ -110,3 +110,26 @@
         </div>
     </div>
 </div>
+
+<!-- 缓存管理 -->
+<div class="bg-white rounded-lg shadow-sm border border-gray-200 mt-6">
+    <div class="px-6 py-4 border-b border-gray-200 bg-gray-50/50">
+        <h3 class="text-lg font-bold text-gray-800">🚀 缓存管理</h3>
+        <p class="text-sm text-gray-500 mt-1">清除首页缓存，下次访问时将重新生成页面。</p>
+    </div>
+    <div class="p-6">
+        <div class="flex items-center justify-between p-4 rounded-xl border border-gray-100 hover:border-orange-100 hover:bg-orange-50/10 transition-all">
+            <div>
+                <h4 class="text-sm font-semibold text-gray-700">清除首页缓存</h4>
+                <p class="text-xs text-gray-400 mt-1">清除后首页将从数据库重新渲染，下次访问时自动重建缓存（TTL 1小时）。</p>
+            </div>
+            <button @click="clearHomeCache()"
+                    class="inline-flex items-center px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all shadow-sm">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                </svg>
+                <span>清除首页缓存</span>
+            </button>
+        </div>
+    </div>
+</div>

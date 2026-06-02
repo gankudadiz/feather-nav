@@ -982,6 +982,23 @@ function adminInit() {
             }
         },
 
+        // 清除首页缓存
+        async clearHomeCache() {
+            if (!confirm('确定要清除首页缓存吗？')) return;
+            try {
+                const res = await fetch('/api/cache/clear-home', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-Token': this.csrfToken
+                    }
+                });
+                const data = await res.json();
+                this.showToast(data.message || (data.success ? '缓存已清除' : '清除失败'), data.success ? 'success' : 'error');
+            } catch (e) {
+                this.showToast('清除缓存失败：' + e.message, 'error');
+            }
+        },
+
         async checkLink(link) {
             try {
                 this.showToast(`正在检测: ${link.title}...`, 'success');

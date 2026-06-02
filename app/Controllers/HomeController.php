@@ -26,6 +26,31 @@ class HomeController
             }
         }
 
+        // 确保 session 已启动（is_public=true 时上一步不会启动 session）
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        // 已登录用户不缓存，直接渲染（个性化场景留给登录后）
+        if (!empty($_SESSION['user_id'])) {
+            echo $this->renderAndOutput();
+            return;
+        }
+
+        // 未登录访客走 Redis 整页缓存
+        echo \App\Helpers\PageCacheHelper::remember('home', 21600, function () {
+            return $this->renderAndOutput(true);
+        });
+    }
+
+    /**
+     * 渲染首页并返回 HTML
+     * 
+     * @param bool $return true 时返回 HTML 字符串，false 时直接 echo
+     * @return string HTML 内容
+     */
+    private function renderAndOutput(bool $return = false): string
+    {
         $siteTitle = SettingHelper::get('site_title', '我的导航');
         $siteSubtitle = SettingHelper::get('site_subtitle', '简约而不简单');
 
@@ -33,7 +58,13 @@ class HomeController
             'siteTitle' => $siteTitle,
             'siteSubtitle' => $siteSubtitle
         ]);
-        echo $this->renderLayout($content, $siteTitle);
+        $html = $this->renderLayout($content, $siteTitle);
+
+        if ($return) {
+            return $html;
+        }
+        echo $html;
+        return '';
     }
 
     public function admin(): void

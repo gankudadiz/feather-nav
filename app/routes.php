@@ -12,6 +12,7 @@ use App\Controllers\DashboardController;
 use App\Controllers\ExportController;
 use App\Controllers\ImportController;
 use App\Controllers\SettingsController;
+use App\Controllers\CacheController;
 
 // 通用认证函数
 function requireAuth()
@@ -223,6 +224,14 @@ Flight::group('/api', function () {
         validateCsrf();
         $u = new UploadController();
         $u->uploadIcon();
+    });
+
+    // 缓存管理
+    Flight::route('POST /cache/clear-home', function () {
+        requireAuth();
+        validateCsrf();
+        $c = new CacheController();
+        $c->clearHome();
     });
 });
 
