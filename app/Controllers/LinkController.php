@@ -85,6 +85,7 @@ class LinkController
 
             $count = count($ids);
             $db->commit();
+            \App\Helpers\PageCacheHelper::forget('home');
             LogHelper::log('link_batch_move', "批量转移链接至 [$categoryName] (共 $count 个)");
             Flight::json(['success' => true, 'message' => "成功转移 $count 条链接至 $categoryName"]);
         } catch (\Exception $e) {
