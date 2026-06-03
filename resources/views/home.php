@@ -1,4 +1,15 @@
 <?php // 网站标题现已由 HomeController 动态注入 ?>
+<?php // 缓存命中时也会执行到这里，将首页数据嵌入到 HTML 中 ?>
+<script>
+    // 服务端内嵌的首页数据（仅含公开链接；缓存永远不包含隐私链接）
+    // Alpine.js 优先消费此数据，隐私链接由客户端后台 API 补齐
+    window.__NAV_DATA__ = {
+        categories: <?= json_encode($categories ?? [], JSON_UNESCAPED_UNICODE) ?>,
+        links: <?= json_encode($links ?? [], JSON_UNESCAPED_UNICODE) ?>,
+        // 系统是否启用了隐私空间（仅标识配置，不含任何 session 状态）
+        privacyEnabled: <?= !empty($privacyEnabled) ? 'true' : 'false' ?>
+    };
+</script>
 
 <div class="container mx-auto px-4 py-8" x-data="navigation()">
     <!-- 搜索和筛选栏 -->
@@ -177,7 +188,47 @@ function navigation() {
         privateVerified: false,
 
         async init() {
+            // 优先使用服务端内嵌数据（缓存 HTML 命中时或直接渲染时均可用）
+            if (window.__NAV_DATA__) {
+                const nav = window.__NAV_DATA__;
+                this.categories = nav.categories.map(cat => ({
+                    ...cat,
+                    links: nav.links.filter(link => link.category_id === cat.id)
+                }));
+                // 内嵌数据只含公开链接，默认未解锁
+                this.privateVerified = false;
+
+                // 系统启用了隐私空间：后台异步拉一次 API 补齐隐私链接
+                if (nav.privacyEnabled) {
+                    this.syncLinks();
+                }
+
+                // 用完后清理全局变量，避免重复消费
+                delete window.__NAV_DATA__;
+                return;
+            }
+            // 降级路径：缓存未命中 / 已登录用户 / 异常场景，走原有 API 流程
             await this.loadData();
+        },
+
+        // 后台从 API 同步链接数据，仅用于补齐隐私链接（不阻塞首屏渲染）
+        async syncLinks() {
+            try {
+                const res = await fetch('/api/links');
+                const links = await res.json();
+
+                // 若 API 返回了隐私链接，说明当前 session 已通过验证
+                this.privateVerified = Array.isArray(links) && links.some(link => link.is_private == 1);
+
+                // 用 API 返回的完整链接列表替换内嵌的公开链接
+                this.categories = this.categories.map(cat => ({
+                    ...cat,
+                    links: links.filter(link => link.category_id === cat.id)
+                }));
+            } catch (e) {
+                // 静默失败：用户至少能看到内嵌的公开链接
+                console.error('后台链接同步失败：', e);
+            }
         },
 
         async loadData() {

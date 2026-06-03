@@ -53,6 +53,7 @@ class CategoryController
 
         $newId = $db->lastInsertId();
         LogHelper::log('category_create', "创建分类: {$data['name']} (ID: $newId)");
+        \App\Helpers\PageCacheHelper::forget('home');
 
         Flight::json(['id' => $newId, 'message' => '创建成功'], 201);
     }
@@ -91,6 +92,7 @@ class CategoryController
         $stmt->execute([$data['name'], $data['sort_order'] ?? 0, $id]);
 
         LogHelper::log('category_update', "更新分类: {$data['name']} (ID: $id)");
+        \App\Helpers\PageCacheHelper::forget('home');
 
         Flight::json(['message' => '更新成功']);
     }
@@ -123,6 +125,7 @@ class CategoryController
         $stmt->execute([$id]);
 
         LogHelper::log('category_delete', "删除分类: $categoryName (关联链接数: $linkCount)");
+        \App\Helpers\PageCacheHelper::forget('home');
 
         Flight::json([
             'message' => '删除成功',
@@ -155,6 +158,7 @@ class CategoryController
 
             $db->commit();
             LogHelper::log('category_batch_reorder', "批量调整分类排序 (共 " . count($data['updates']) . " 个)");
+            \App\Helpers\PageCacheHelper::forget('home');
             Flight::json(['success' => true, 'message' => '批量更新成功']);
         } catch (\Exception $e) {
             $db->rollBack();

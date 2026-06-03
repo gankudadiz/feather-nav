@@ -36,6 +36,7 @@ class LinkController
             $count = count($ids);
             $db->commit();
             LogHelper::log('link_batch_delete', "批量删除链接 (共 $count 个)");
+            \App\Helpers\PageCacheHelper::forget('home');
             Flight::json(['success' => true, 'message' => "成功删除 $count 条链接"]);
         } catch (\Exception $e) {
             $db->rollBack();
@@ -211,6 +212,7 @@ class LinkController
 
         $newId = $db->lastInsertId();
         LogHelper::log('link_create', "添加链接: {$data['title']} (ID: $newId)");
+        \App\Helpers\PageCacheHelper::forget('home');
 
         Flight::json(['id' => $newId, 'message' => '创建成功'], 201);
     }
@@ -285,6 +287,7 @@ class LinkController
         ]);
 
         LogHelper::log('link_update', "更新链接: {$data['title']} (ID: $id)");
+        \App\Helpers\PageCacheHelper::forget('home');
 
         Flight::json(['message' => '更新成功']);
     }
@@ -312,6 +315,7 @@ class LinkController
         $stmt->execute([$id]);
 
         LogHelper::log('link_delete', "删除链接: $linkTitle (ID: $id)");
+        \App\Helpers\PageCacheHelper::forget('home');
 
         Flight::json(['message' => '删除成功']);
     }
@@ -341,6 +345,7 @@ class LinkController
 
             $db->commit();
             LogHelper::log('link_batch_reorder', "批量调整链接排序 (共 " . count($data['updates']) . " 个)");
+            \App\Helpers\PageCacheHelper::forget('home');
             Flight::json(['success' => true, 'message' => '批量更新成功']);
         } catch (\Exception $e) {
             $db->rollBack();
@@ -383,6 +388,7 @@ class LinkController
         $stmt->execute([$icon, $id]);
 
         LogHelper::log('link_refresh_icon', "刷新图标: {$link['title']} (ID: $id)");
+        \App\Helpers\PageCacheHelper::forget('home');
 
         Flight::json(['message' => '图标更新成功', 'icon' => $icon]);
     }

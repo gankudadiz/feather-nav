@@ -51,12 +51,32 @@ class HomeController
      */
     private function renderAndOutput(bool $return = false): string
     {
+        $db = Flight::db()->getConnection();
+
+        // 分类列表（不计算 link_count，前端用 links 数组渲染）
+        $categories = $db->query(
+            'SELECT id, name, sort_order FROM categories ORDER BY sort_order ASC'
+        )->fetchAll(\PDO::FETCH_ASSOC);
+
+        // 公开链接：缓存中永远不包含隐私链接（隐私链接由客户端后台 API 补齐）
+        $links = $db->query(
+            "SELECT id, category_id, title, url, description, need_vpn, is_private,
+                    icon, sort_order, click_count, last_status, last_check_at, created_at
+             FROM links WHERE is_private = 0 ORDER BY sort_order ASC"
+        )->fetchAll(\PDO::FETCH_ASSOC);
+
+        // 系统是否配置了隐私空间密码（仅决定前端是否需要后台 API 同步，不含任何 session 状态）
+        $privacyEnabled = !empty($_ENV['PRIVATE_SPACE_PASSWORD'] ?? '');
+
         $siteTitle = SettingHelper::get('site_title', '我的导航');
         $siteSubtitle = SettingHelper::get('site_subtitle', '简约而不简单');
 
         $content = $this->renderView('home', [
-            'siteTitle' => $siteTitle,
-            'siteSubtitle' => $siteSubtitle
+            'siteTitle'      => $siteTitle,
+            'siteSubtitle'   => $siteSubtitle,
+            'categories'     => $categories,
+            'links'          => $links,
+            'privacyEnabled' => $privacyEnabled,
         ]);
         $html = $this->renderLayout($content, $siteTitle);
 
