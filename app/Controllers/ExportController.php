@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use Flight;
+use App\Database;
 use App\Helpers\LogHelper;
 
 class ExportController
@@ -116,30 +117,39 @@ class ExportController
     public function exportSql(): void
     {
         $db = Flight::db()->getConnection();
-        $dbName = getenv('DB_DATABASE') ?: 'personal_nav';
+        $dbName = Database::getDatabaseLabel();
+        $isSqlite = Database::isSqlite();
         $sql = "";
 
         // 文件头
         $sql .= "-- Feather Nav 数据库备份\n";
         $sql .= "-- 生成时间: " . date('Y-m-d H:i:s') . "\n";
         $sql .= "-- 数据库: {$dbName}\n\n";
-        $sql .= "SET NAMES utf8mb4;\n";
-        $sql .= "SET FOREIGN_KEY_CHECKS=0;\n\n";
+        $sql .= $isSqlite
+            ? "PRAGMA foreign_keys=OFF;\n\n"
+            : "SET NAMES utf8mb4;\nSET FOREIGN_KEY_CHECKS=0;\n\n";
 
         // 获取所有表
-        $tables = $db->query("SHOW TABLES")->fetchAll(\PDO::FETCH_COLUMN);
+        $tables = $isSqlite
+            ? $this->getSqliteTables($db)
+            : $db->query("SHOW TABLES")->fetchAll(\PDO::FETCH_COLUMN);
 
         foreach ($tables as $table) {
+            $quotedTable = $this->quoteIdentifier($table, $isSqlite);
+
             // 表结构
-            $createTable = $db->query("SHOW CREATE TABLE `{$table}`")->fetch(\PDO::FETCH_ASSOC);
+            $createTableSql = $isSqlite
+                ? $this->getSqliteCreateTable($db, $table)
+                : $db->query("SHOW CREATE TABLE {$quotedTable}")->fetch(\PDO::FETCH_ASSOC)['Create Table'];
+
             $sql .= "-- ----------------------------\n";
             $sql .= "-- Table structure for {$table}\n";
             $sql .= "-- ----------------------------\n";
-            $sql .= "DROP TABLE IF EXISTS `{$table}`;\n";
-            $sql .= $createTable['Create Table'] . ";\n\n";
+            $sql .= "DROP TABLE IF EXISTS {$quotedTable};\n";
+            $sql .= $createTableSql . ";\n\n";
 
             // 表数据
-            $stmt = $db->query("SELECT * FROM `{$table}`");
+            $stmt = $db->query("SELECT * FROM {$quotedTable}");
             $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
 
             if (!empty($rows)) {
@@ -148,7 +158,8 @@ class ExportController
                 $sql .= "-- ----------------------------\n";
 
                 $columns = array_keys($rows[0]);
-                $sql .= "INSERT INTO `{$table}` (`" . implode('`, `', $columns) . "`) VALUES\n";
+                $quotedColumns = array_map(fn ($column) => $this->quoteIdentifier($column, $isSqlite), $columns);
+                $sql .= "INSERT INTO {$quotedTable} (" . implode(', ', $quotedColumns) . ") VALUES\n";
 
                 $values = [];
                 foreach ($rows as $row) {
@@ -168,7 +179,7 @@ class ExportController
             }
         }
 
-        $sql .= "SET FOREIGN_KEY_CHECKS=1;\n";
+        $sql .= $isSqlite ? "PRAGMA foreign_keys=ON;\n" : "SET FOREIGN_KEY_CHECKS=1;\n";
 
         $filename = 'feather_nav_backup_' . date('Ymd_His') . '.sql';
 
@@ -189,6 +200,28 @@ class ExportController
 
         echo $sql;
         exit;
+    }
+
+    private function getSqliteTables(\PDO $db): array
+    {
+        return $db->query(
+            "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name"
+        )->fetchAll(\PDO::FETCH_COLUMN);
+    }
+
+    private function getSqliteCreateTable(\PDO $db, string $table): string
+    {
+        $stmt = $db->prepare("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = ?");
+        $stmt->execute([$table]);
+
+        return (string) $stmt->fetchColumn();
+    }
+
+    private function quoteIdentifier(string $identifier, bool $isSqlite): string
+    {
+        $quote = $isSqlite ? '"' : '`';
+
+        return $quote . str_replace($quote, $quote . $quote, $identifier) . $quote;
     }
 
     /**

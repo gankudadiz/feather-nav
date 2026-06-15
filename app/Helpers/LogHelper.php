@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Helpers;
 
 use Flight;
-use PDO;
 
 /**
  * 超轻量级审计日志助手类
@@ -72,8 +71,9 @@ class LogHelper
     {
         try {
             $db = Flight::db()->getConnection();
-            $stmt = $db->prepare('DELETE FROM audit_logs WHERE created_at < DATE_SUB(NOW(), INTERVAL ? DAY)');
-            $stmt->execute([$days]);
+            $cutoff = date('Y-m-d H:i:s', strtotime("-{$days} days"));
+            $stmt = $db->prepare('DELETE FROM audit_logs WHERE created_at < ?');
+            $stmt->execute([$cutoff]);
         } catch (\Exception $e) {
             error_log('Audit Log Cleanup Error: ' . $e->getMessage());
         }

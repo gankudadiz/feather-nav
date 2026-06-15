@@ -23,14 +23,15 @@
 - **后端**：Flight PHP 3.17 + PHP 8.1+
 - **前端**：Tailwind CSS 3.4 + Alpine.js 3.13
 - **构建工具**：Vite 5.x
-- **数据库**：MySQL 5.7 / 8.0
+- **数据库**：MySQL 5.7 / 8.0 或 SQLite 3
 
 ## 环境要求
 
 | 依赖 | 版本 | 说明 |
 |------|------|------|
-| PHP | ≥ 8.1 | 需启用 `pdo_mysql`、`fileinfo` 扩展 |
-| MySQL | ≥ 5.7 | |
+| PHP | ≥ 8.1 | 需启用 `fileinfo`，并按数据库选择启用 `pdo_mysql` 或 `pdo_sqlite` |
+| MySQL | ≥ 5.7 | 使用 MySQL 时需要 |
+| SQLite | 3.x | 使用 SQLite 时需要 PHP `pdo_sqlite` 扩展 |
 | Node.js | ≥ 16 | 用于构建前端资源及开发热更新 |
 | Composer | 最新版 | PHP 依赖管理 |
 
@@ -86,9 +87,10 @@ chmod +x start-preview.sh
    cp .env.example .env
    ```
 
-   编辑 `.env` 文件，配置数据库连接信息及管理员账号：
+   编辑 `.env` 文件，配置数据库连接信息及管理员账号。默认使用 MySQL：
 
    ```ini
+   DB_CONNECTION=mysql
    DB_HOST=127.0.0.1
    DB_PORT=3306
    DB_DATABASE=personal_nav
@@ -99,10 +101,26 @@ chmod +x start-preview.sh
    ADMIN_PASSWORD=admin123
    ```
 
+   如需使用 SQLite：
+
+   ```ini
+   DB_CONNECTION=sqlite
+   DB_SQLITE_PATH=storage/database/personal_nav.sqlite
+
+   ADMIN_USERNAME=admin
+   ADMIN_PASSWORD=admin123
+   ```
+
    执行数据库初始化：
 
    ```bash
    php scripts/setup_db.php
+   ```
+
+   如需将已有 MySQL 数据迁移到 SQLite，先配置好 MySQL 连接信息和 `DB_SQLITE_PATH`，再执行：
+
+   ```bash
+   php scripts/mysql_to_sqlite.php --fresh
    ```
 
 5. **构建前端资源**

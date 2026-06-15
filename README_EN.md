@@ -23,14 +23,15 @@ A lightweight personal navigation website built with Flight PHP + Tailwind CSS +
 - **Backend**: Flight PHP 3.17 + PHP 8.1+
 - **Frontend**: Tailwind CSS 3.4 + Alpine.js 3.13
 - **Build Tool**: Vite 5.x
-- **Database**: MySQL 5.7 / 8.0
+- **Database**: MySQL 5.7 / 8.0 or SQLite 3
 
 ## Requirements
 
 | Dependency | Version | Notes |
 |------------|---------|-------|
-| PHP | ≥ 8.1 | Extensions: `pdo_mysql`, `fileinfo` |
-| MySQL | ≥ 5.7 | |
+| PHP | ≥ 8.1 | Extension: `fileinfo`, plus `pdo_mysql` or `pdo_sqlite` depending on your database |
+| MySQL | ≥ 5.7 | Required when using MySQL |
+| SQLite | 3.x | Required when using SQLite via PHP `pdo_sqlite` |
 | Node.js | ≥ 16 | For frontend build & dev HMR |
 | Composer | Latest | PHP dependency manager |
 
@@ -86,9 +87,10 @@ The script installs dependencies, builds assets, and starts the server. Open `ht
    cp .env.example .env
    ```
 
-   Edit `.env` with your database and admin credentials:
+   Edit `.env` with your database and admin credentials. MySQL is the default:
 
    ```ini
+   DB_CONNECTION=mysql
    DB_HOST=127.0.0.1
    DB_PORT=3306
    DB_DATABASE=personal_nav
@@ -99,10 +101,26 @@ The script installs dependencies, builds assets, and starts the server. Open `ht
    ADMIN_PASSWORD=admin123
    ```
 
+   To use SQLite instead:
+
+   ```ini
+   DB_CONNECTION=sqlite
+   DB_SQLITE_PATH=storage/database/personal_nav.sqlite
+
+   ADMIN_USERNAME=admin
+   ADMIN_PASSWORD=admin123
+   ```
+
    Initialize the database:
 
    ```bash
    php scripts/setup_db.php
+   ```
+
+   To migrate existing MySQL data into SQLite, keep the MySQL settings and `DB_SQLITE_PATH` configured, then run:
+
+   ```bash
+   php scripts/mysql_to_sqlite.php --fresh
    ```
 
 5. **Build frontend assets**

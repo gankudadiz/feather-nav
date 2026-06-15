@@ -7,9 +7,17 @@ Thumbs.db
 *.log
 /storage/logs/*
 !/storage/logs/.gitkeep
+/storage/database/*.sqlite
+/storage/database/*.sqlite-*
+/storage/database/*.db
+/storage/database/*.db-*
 
 # User specified ignores
-/database/
+!/database/
+/database/*.sqlite
+/database/*.sqlite-*
+/database/*.db
+/database/*.db-*
 /.claude/
 CLAUDE.md
 /doc/

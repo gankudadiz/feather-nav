@@ -63,7 +63,7 @@ class SettingsController
                 $settingName = $checkStmt->fetchColumn();
 
                 if ($settingName) {
-                    $stmt = $db->prepare('UPDATE settings SET setting_value = ? WHERE setting_key = ?');
+                    $stmt = $db->prepare('UPDATE settings SET setting_value = ?, updated_at = CURRENT_TIMESTAMP WHERE setting_key = ?');
                     $stmt->execute([$value, $key]);
                     $updateCount++;
                     $updatedKeys[] = $settingName;
